@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import type { Torrent } from '../../shared/types';
 import { TorrentStatus } from '../../shared/types';
 import { humanSize, speed, percent, ratio, eta, statusText } from '../format';
+import type { SortState } from '../sort';
 
 const ROW_H = 23;
 const OVERSCAN = 8;
@@ -44,9 +45,11 @@ interface Props {
   torrents: Torrent[];
   selected: Set<number>;
   onSelect: (sel: Set<number>) => void;
+  sort: SortState;
+  onSort: (key: string) => void;
 }
 
-export function TorrentTable({ torrents, selected, onSelect }: Props) {
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [vh, setVh] = useState(400);
@@ -83,8 +86,9 @@ export function TorrentTable({ torrents, selected, onSelect }: Props) {
     <div className="table">
       <div className="thead">
         {columns.map((c) => (
-          <div key={c.key} className="th" style={colStyle(c)}>
+          <div key={c.key} className="th" style={colStyle(c)} onClick={() => onSort(c.key)}>
             {c.label}
+            {sort.key === c.key && <span className="sort-arrow">{sort.dir === 'asc' ? '▲' : '▼'}</span>}
           </div>
         ))}
       </div>

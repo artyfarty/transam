@@ -6,6 +6,9 @@ import { DetailsPane } from './components/DetailsPane';
 import { StatusBar } from './components/StatusBar';
 import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
+import { Sidebar } from './components/Sidebar';
+import { matchesFilter, type Filter } from './filters';
+import { sortTorrents, type SortState } from './sort';
 
 const POLL_MS = 1500;
 
@@ -16,6 +19,8 @@ export function App() {
   const [torrents, setTorrents] = useState<Torrent[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState<Filter>({ kind: 'cat', id: 'all' });
+  const [sort, setSort] = useState<SortState>({ key: 'queue', dir: 'asc' });
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [showConnect, setShowConnect] = useState(false);
@@ -68,10 +73,16 @@ export function App() {
   }, [config, poll]);
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return torrents;
-    const q = search.toLowerCase();
-    return torrents.filter((t) => t.name.toLowerCase().includes(q));
-  }, [torrents, search]);
+    const q = search.trim().toLowerCase();
+    const list = torrents.filter(
+      (t) => matchesFilter(t, filter) && (!q || t.name.toLowerCase().includes(q)),
+    );
+    return sortTorrents(list, sort);
+  }, [torrents, search, filter, sort]);
+
+  const onSort = useCallback((key: string) => {
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }));
+  }, []);
 
   const ids = useMemo(() => [...selected], [selected]);
 
@@ -99,8 +110,11 @@ export function App() {
         onSettings={() => setShowConnect(true)}
       />
       <div className="body">
-        <TorrentTable torrents={filtered} selected={selected} onSelect={setSelected} />
-        <DetailsPane torrent={selectedTorrent} />
+        <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} />
+        <div className="main">
+          <TorrentTable torrents={filtered} selected={selected} onSelect={setSelected} sort={sort} onSort={onSort} />
+          <DetailsPane torrent={selectedTorrent} />
+        </div>
       </div>
       <StatusBar connected={connected} serverVersion={serverVersion} count={torrents.length} downSpeed={down} upSpeed={up} />
 
