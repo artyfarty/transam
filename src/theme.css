@@ -371,7 +371,9 @@ table.files select {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 18px 20px;
-  width: 380px;
+  width: 440px;
+  max-height: 88vh;
+  overflow: auto;
 }
 .modal h2 {
   margin: 0 0 12px;
@@ -423,4 +425,48 @@ table.files select {
   color: var(--error);
   font-size: 11px;
   min-height: 14px;
+}
+.map-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.map-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 6px;
+  font: inherit;
+}
+.map-row .arrow {
+  color: var(--text-dim);
+}
+.map-row .del {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 7px;
+}
+.map-row .del:hover {
+  color: var(--error);
+}
+.add-map {
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 4px 10px;
+  font: inherit;
+  margin-top: 2px;
+}
+.add-map:hover {
+  color: var(--text);
+  border-color: var(--accent);
 }

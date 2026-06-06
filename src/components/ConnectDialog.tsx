@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ServerConfig } from '../../shared/types';
+import type { ServerConfig, PathMapping } from '../../shared/types';
 
 const DEFAULTS: ServerConfig = {
   host: '',
@@ -24,21 +24,30 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
 
   const up = (patch: Partial<ServerConfig>) => setCfg((c) => ({ ...c, ...patch }));
 
+  const mappings: PathMapping[] = cfg.pathMappings ?? [];
+  const setMappings = (m: PathMapping[]) => up({ pathMappings: m });
+  const updateMapping = (i: number, patch: Partial<PathMapping>) =>
+    setMappings(mappings.map((m, j) => (j === i ? { ...m, ...patch } : m)));
+
   async function saveAndTest() {
     if (!cfg.host.trim()) {
       setErr('Host is required');
       return;
     }
+    const clean: ServerConfig = {
+      ...cfg,
+      pathMappings: (cfg.pathMappings ?? []).filter((m) => m.local.trim() && m.remote.trim()),
+    };
     setBusy(true);
     setErr('');
-    await window.api.setConfig(cfg);
+    await window.api.setConfig(clean);
     const r = await window.api.test();
     setBusy(false);
     if (!r.ok) {
       setErr(r.result || 'connection failed');
       return;
     }
-    onSaved(cfg);
+    onSaved(clean);
   }
 
   return (
@@ -75,6 +84,32 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
             Use HTTPS
           </label>
         </div>
+
+        <div className="field">
+          <label>Path mappings (local mount → daemon path)</label>
+          {mappings.map((m, i) => (
+            <div className="map-row" key={i}>
+              <input
+                placeholder="Z:\downloads"
+                value={m.local}
+                onChange={(e) => updateMapping(i, { local: e.target.value })}
+              />
+              <span className="arrow">→</span>
+              <input
+                placeholder="/mnt/downloads"
+                value={m.remote}
+                onChange={(e) => updateMapping(i, { remote: e.target.value })}
+              />
+              <button className="del" onClick={() => setMappings(mappings.filter((_, j) => j !== i))} title="Remove">
+                ✕
+              </button>
+            </div>
+          ))}
+          <button className="add-map" onClick={() => setMappings([...mappings, { local: '', remote: '' }])}>
+            + Add mapping
+          </button>
+        </div>
+
         <div className="err">{err}</div>
         <div className="actions">
           {onCancel && (
