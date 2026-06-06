@@ -10,6 +10,7 @@ import { Sidebar } from './components/Sidebar';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
+import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
 
@@ -20,8 +21,10 @@ export function App() {
   const [torrents, setTorrents] = useState<Torrent[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [search, setSearch] = useState('');
-  const [filter, setFilter] = useState<Filter>({ kind: 'cat', id: 'all' });
-  const [sort, setSort] = useState<SortState>({ key: 'queue', dir: 'asc' });
+  const [filter, setFilter] = useState<Filter>(() => loadJSON<Filter>('filter', { kind: 'cat', id: 'all' }));
+  const [sort, setSort] = useState<SortState>(() => loadJSON<SortState>('sort', { key: 'queue', dir: 'asc' }));
+  useEffect(() => saveJSON('filter', filter), [filter]);
+  useEffect(() => saveJSON('sort', sort), [sort]);
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [showConnect, setShowConnect] = useState(false);
@@ -127,6 +130,31 @@ export function App() {
     { label: 'Remove', onClick: () => act('remove') },
     { label: 'Remove + delete data', danger: true, onClick: () => act('remove-data') },
   ];
+
+  // keyboard shortcuts (ignored while typing in a form field)
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.key === ' ') {
+        if (!ids.length) return;
+        e.preventDefault();
+        const anyActive = torrents.some((t) => ids.includes(t.id) && t.status !== 0);
+        act(anyActive ? 'stop' : 'start');
+      } else if (e.key === 'Delete') {
+        act('remove');
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setSelected(new Set(filtered.map((t) => t.id)));
+      } else if (e.key === 'Escape') {
+        setMenu(null);
+        setSelected(new Set());
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ids, torrents, filtered]);
 
   const selId = ids.length === 1 ? ids[0] : null;
   const selectedTorrent = selId != null ? torrents.find((t) => t.id === selId) ?? null : null;
