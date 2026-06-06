@@ -92,6 +92,64 @@ export const TORRENT_FIELDS = [
   'queuePosition',
 ] as const;
 
+// --- per-torrent detail (fetched only for the selected torrent) ------------
+export interface TorrentFile {
+  name: string;
+  length: number;
+  bytesCompleted: number;
+}
+export interface TorrentFileStat {
+  bytesCompleted: number;
+  wanted: boolean;
+  priority: number; // -1 low, 0 normal, 1 high
+}
+export interface TorrentPeer {
+  address: string;
+  clientName: string;
+  rateToClient: number;
+  rateToPeer: number;
+  progress: number; // 0..1
+  flagStr: string;
+}
+export interface TrackerStat {
+  host: string;
+  announceState: number;
+  lastAnnounceResult: string;
+  lastAnnounceSucceeded: boolean;
+  seederCount: number;
+  leecherCount: number;
+  nextAnnounceTime: number;
+}
+export interface TorrentDetail {
+  id: number;
+  name: string;
+  comment: string;
+  hashString: string;
+  pieceCount: number;
+  pieceSize: number;
+  dateCreated: number;
+  downloadDir: string;
+  files: TorrentFile[];
+  fileStats: TorrentFileStat[];
+  peers: TorrentPeer[];
+  trackerStats: TrackerStat[];
+}
+
+export const DETAIL_FIELDS = [
+  'id',
+  'name',
+  'comment',
+  'hashString',
+  'pieceCount',
+  'pieceSize',
+  'dateCreated',
+  'downloadDir',
+  'files',
+  'fileStats',
+  'peers',
+  'trackerStats',
+] as const;
+
 export interface SessionStats {
   downloadSpeed: number;
   uploadSpeed: number;

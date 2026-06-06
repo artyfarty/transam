@@ -2,7 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TransmissionClient } from './transmission';
-import { TORRENT_FIELDS } from '../shared/types';
+import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
 import type { ServerConfig, RpcResult } from '../shared/types';
 
 let win: BrowserWindow | null = null;
@@ -71,6 +71,15 @@ function registerIpc(): void {
 
   ipcMain.handle('session:stats', async (): Promise<RpcResult> => {
     return ensureClient().call('session-stats');
+  });
+
+  ipcMain.handle('torrents:detail', async (_e, id: number): Promise<RpcResult> => {
+    return ensureClient().call('torrent-get', { ids: [id], fields: DETAIL_FIELDS });
+  });
+
+  // Generic torrent-set passthrough (file priorities, location, labels, limits).
+  ipcMain.handle('torrents:set', async (_e, ids: number[], args: Record<string, unknown>): Promise<RpcResult> => {
+    return ensureClient().call('torrent-set', { ids, ...args });
   });
 
   ipcMain.handle('torrents:action', async (_e, action: string, ids: number[]): Promise<RpcResult> => {

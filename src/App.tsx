@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ServerConfig, Torrent } from '../shared/types';
+import type { ServerConfig, Torrent, TorrentDetail } from '../shared/types';
 import { Toolbar } from './components/Toolbar';
 import { TorrentTable } from './components/TorrentTable';
 import { DetailsPane } from './components/DetailsPane';
@@ -93,7 +93,31 @@ export function App() {
     poll();
   }
 
-  const selectedTorrent = ids.length === 1 ? torrents.find((t) => t.id === ids[0]) ?? null : null;
+  const selId = ids.length === 1 ? ids[0] : null;
+  const selectedTorrent = selId != null ? torrents.find((t) => t.id === selId) ?? null : null;
+
+  const [detail, setDetail] = useState<TorrentDetail | null>(null);
+  const fetchDetail = useCallback(async () => {
+    if (selId == null) {
+      setDetail(null);
+      return;
+    }
+    const r = await window.api.detail(selId);
+    if (r.ok && r.arguments) {
+      const arr = (r.arguments as { torrents: TorrentDetail[] }).torrents;
+      setDetail(arr?.[0] ?? null);
+    }
+  }, [selId]);
+
+  useEffect(() => {
+    if (selId == null) {
+      setDetail(null);
+      return;
+    }
+    fetchDetail();
+    const iv = setInterval(fetchDetail, POLL_MS);
+    return () => clearInterval(iv);
+  }, [selId, fetchDetail]);
 
   if (config === undefined) return null; // loading
 
@@ -113,7 +137,7 @@ export function App() {
         <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} />
         <div className="main">
           <TorrentTable torrents={filtered} selected={selected} onSelect={setSelected} sort={sort} onSort={onSort} />
-          <DetailsPane torrent={selectedTorrent} />
+          <DetailsPane torrent={selectedTorrent} detail={selId === detail?.id ? detail : null} onRefresh={fetchDetail} />
         </div>
       </div>
       <StatusBar connected={connected} serverVersion={serverVersion} count={torrents.length} downSpeed={down} upSpeed={up} />

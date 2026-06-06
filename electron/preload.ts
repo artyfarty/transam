@@ -8,6 +8,9 @@ const api = {
   test: (): Promise<RpcResult> => ipcRenderer.invoke('rpc:test'),
   getTorrents: (ids?: number[]): Promise<RpcResult> => ipcRenderer.invoke('torrents:get', ids),
   sessionStats: (): Promise<RpcResult> => ipcRenderer.invoke('session:stats'),
+  detail: (id: number): Promise<RpcResult> => ipcRenderer.invoke('torrents:detail', id),
+  set: (ids: number[], args: Record<string, unknown>): Promise<RpcResult> =>
+    ipcRenderer.invoke('torrents:set', ids, args),
   action: (action: string, ids: number[]): Promise<RpcResult> =>
     ipcRenderer.invoke('torrents:action', action, ids),
   add: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult> =>
