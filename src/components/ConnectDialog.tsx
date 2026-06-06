@@ -1,0 +1,92 @@
+import { useState } from 'react';
+import type { ServerConfig } from '../../shared/types';
+
+const DEFAULTS: ServerConfig = {
+  host: '',
+  port: 9091,
+  rpcPath: '/transmission/rpc',
+  useHttps: false,
+  username: '',
+  password: '',
+  pathMappings: [],
+};
+
+interface Props {
+  initial: ServerConfig | null;
+  onSaved: (cfg: ServerConfig) => void;
+  onCancel?: () => void;
+}
+
+export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
+  const [cfg, setCfg] = useState<ServerConfig>({ ...DEFAULTS, ...(initial ?? {}) });
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const up = (patch: Partial<ServerConfig>) => setCfg((c) => ({ ...c, ...patch }));
+
+  async function saveAndTest() {
+    if (!cfg.host.trim()) {
+      setErr('Host is required');
+      return;
+    }
+    setBusy(true);
+    setErr('');
+    await window.api.setConfig(cfg);
+    const r = await window.api.test();
+    setBusy(false);
+    if (!r.ok) {
+      setErr(r.result || 'connection failed');
+      return;
+    }
+    onSaved(cfg);
+  }
+
+  return (
+    <div className="modal-back">
+      <div className="modal">
+        <h2>Connect to Transmission</h2>
+        <div className="field">
+          <label>Host</label>
+          <input value={cfg.host} onChange={(e) => up({ host: e.target.value })} placeholder="nas.local or 192.168.x.x" autoFocus />
+        </div>
+        <div className="field row2">
+          <div className="field" style={{ flex: 1 }}>
+            <label>Port</label>
+            <input type="number" value={cfg.port} onChange={(e) => up({ port: Number(e.target.value) })} />
+          </div>
+          <div className="field" style={{ flex: 2 }}>
+            <label>RPC path</label>
+            <input value={cfg.rpcPath} onChange={(e) => up({ rpcPath: e.target.value })} />
+          </div>
+        </div>
+        <div className="field row2">
+          <div className="field" style={{ flex: 1 }}>
+            <label>Username</label>
+            <input value={cfg.username} onChange={(e) => up({ username: e.target.value })} />
+          </div>
+          <div className="field" style={{ flex: 1 }}>
+            <label>Password</label>
+            <input type="password" value={cfg.password} onChange={(e) => up({ password: e.target.value })} />
+          </div>
+        </div>
+        <div className="field row2">
+          <input id="https" type="checkbox" checked={cfg.useHttps} onChange={(e) => up({ useHttps: e.target.checked })} />
+          <label htmlFor="https" style={{ cursor: 'pointer' }}>
+            Use HTTPS
+          </label>
+        </div>
+        <div className="err">{err}</div>
+        <div className="actions">
+          {onCancel && (
+            <button onClick={onCancel} disabled={busy}>
+              Cancel
+            </button>
+          )}
+          <button className="primary" onClick={saveAndTest} disabled={busy}>
+            {busy ? 'Connecting…' : 'Connect'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

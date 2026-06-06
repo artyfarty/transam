@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.log
+
+# Local connection config (never commit personal host/credentials)
+local.config.json
+.env
+.env.*
