@@ -47,10 +47,12 @@ interface Props {
   onSelect: (sel: Set<number>) => void;
   sort: SortState;
   onSort: (key: string) => void;
+  onContext: (x: number, y: number) => void;
 }
 
-export function TorrentTable({ torrents, selected, onSelect, sort, onSort }: Props) {
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort, onContext }: Props) {
   const bodyRef = useRef<HTMLDivElement>(null);
+  const anchor = useRef<number | null>(null);
   const [scrollTop, setScrollTop] = useState(0);
   const [vh, setVh] = useState(400);
 
@@ -68,7 +70,17 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort }: Pro
   const end = Math.min(torrents.length, Math.ceil((scrollTop + vh) / ROW_H) + OVERSCAN);
   const visible = torrents.slice(start, end);
 
-  function clickRow(e: React.MouseEvent, t: Torrent) {
+  function clickRow(e: React.MouseEvent, t: Torrent, index: number) {
+    if (e.shiftKey && anchor.current != null) {
+      const ai = torrents.findIndex((x) => x.id === anchor.current);
+      if (ai >= 0) {
+        const [lo, hi] = ai < index ? [ai, index] : [index, ai];
+        const next = new Set<number>();
+        for (let i = lo; i <= hi; i++) next.add(torrents[i].id);
+        onSelect(next);
+        return;
+      }
+    }
     const next = new Set(selected);
     if (e.ctrlKey || e.metaKey) {
       next.has(t.id) ? next.delete(t.id) : next.add(t.id);
@@ -76,7 +88,17 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort }: Pro
       next.clear();
       next.add(t.id);
     }
+    anchor.current = index;
     onSelect(next);
+  }
+
+  function contextRow(e: React.MouseEvent, t: Torrent, index: number) {
+    e.preventDefault();
+    if (!selected.has(t.id)) {
+      anchor.current = index;
+      onSelect(new Set([t.id]));
+    }
+    onContext(e.clientX, e.clientY);
   }
 
   const colStyle = (c: Column): React.CSSProperties =>
@@ -102,7 +124,8 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort }: Pro
               key={t.id}
               className={`row ${index % 2 ? 'odd' : 'even'} ${sel ? 'sel' : ''}`}
               style={{ top: index * ROW_H }}
-              onMouseDown={(e) => clickRow(e, t)}
+              onMouseDown={(e) => clickRow(e, t, index)}
+              onContextMenu={(e) => contextRow(e, t, index)}
             >
               {columns.map((c) => (
                 <div key={c.key} className={`cell ${c.cls ?? ''}`} style={colStyle(c)} title={c.key === 'name' ? t.name : undefined}>

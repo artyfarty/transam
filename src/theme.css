@@ -356,6 +356,46 @@ table.files select {
   background: var(--bar-fill-done);
 }
 
+/* ---- context menu ---- */
+.ctx-back {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.ctx {
+  position: fixed;
+  min-width: 180px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 6px 24px #0008;
+}
+.ctx-item {
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ctx-item:hover {
+  background: var(--accent-dim);
+}
+.ctx-item.danger:hover {
+  background: var(--error);
+}
+.ctx-item.disabled {
+  color: var(--text-dim);
+  cursor: default;
+}
+.ctx-item.disabled:hover {
+  background: transparent;
+}
+.ctx-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 2px;
+}
+
 /* ---- modal ---- */
 .modal-back {
   position: fixed;

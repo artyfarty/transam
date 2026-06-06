@@ -12,6 +12,8 @@ const api = {
   detail: (id: number): Promise<RpcResult> => ipcRenderer.invoke('torrents:detail', id),
   set: (ids: number[], args: Record<string, unknown>): Promise<RpcResult> =>
     ipcRenderer.invoke('torrents:set', ids, args),
+  setLocation: (ids: number[], location: string, move: boolean): Promise<RpcResult> =>
+    ipcRenderer.invoke('torrents:setLocation', ids, location, move),
   action: (action: string, ids: number[]): Promise<RpcResult> =>
     ipcRenderer.invoke('torrents:action', action, ids),
   add: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult> =>

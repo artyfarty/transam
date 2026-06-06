@@ -10,6 +10,7 @@ declare global {
       sessionStats(): Promise<RpcResult>;
       detail(id: number): Promise<RpcResult>;
       set(ids: number[], args: Record<string, unknown>): Promise<RpcResult>;
+      setLocation(ids: number[], location: string, move: boolean): Promise<RpcResult>;
       action(action: string, ids: number[]): Promise<RpcResult>;
       add(opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult>;
       pickFolder(): Promise<{ local: string; remote: string } | null>;

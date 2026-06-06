@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar';
 import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
 import { Sidebar } from './components/Sidebar';
+import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
 
@@ -95,12 +96,37 @@ export function App() {
 
   const ids = useMemo(() => [...selected], [selected]);
 
+  const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
+
   async function act(action: string) {
     if (!ids.length) return;
     if (action === 'remove' && !confirm(`Remove ${ids.length} torrent(s)? (data kept on disk)`)) return;
+    if (action === 'remove-data' && !confirm(`Remove ${ids.length} torrent(s) AND delete data from disk?`)) return;
     await window.api.action(action, ids);
     poll();
   }
+
+  async function relocate() {
+    if (!ids.length) return;
+    const r = await window.api.pickFolder();
+    if (r) {
+      await window.api.setLocation(ids, r.remote, true);
+      poll();
+    }
+  }
+
+  const menuItems: MenuItem[] = [
+    { label: 'Start', onClick: () => act('start') },
+    { label: 'Start now', onClick: () => act('start-now') },
+    { label: 'Pause', onClick: () => act('stop') },
+    { separator: true },
+    { label: 'Verify', onClick: () => act('verify') },
+    { label: 'Reannounce', onClick: () => act('reannounce') },
+    { label: 'Set location…', onClick: relocate },
+    { separator: true },
+    { label: 'Remove', onClick: () => act('remove') },
+    { label: 'Remove + delete data', danger: true, onClick: () => act('remove-data') },
+  ];
 
   const selId = ids.length === 1 ? ids[0] : null;
   const selectedTorrent = selId != null ? torrents.find((t) => t.id === selId) ?? null : null;
@@ -145,11 +171,20 @@ export function App() {
       <div className="body">
         <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} />
         <div className="main">
-          <TorrentTable torrents={filtered} selected={selected} onSelect={setSelected} sort={sort} onSort={onSort} />
+          <TorrentTable
+            torrents={filtered}
+            selected={selected}
+            onSelect={setSelected}
+            sort={sort}
+            onSort={onSort}
+            onContext={(x, y) => setMenu({ x, y })}
+          />
           <DetailsPane torrent={selectedTorrent} detail={selId === detail?.id ? detail : null} onRefresh={fetchDetail} />
         </div>
       </div>
       <StatusBar connected={connected} serverVersion={serverVersion} count={torrents.length} downSpeed={down} upSpeed={up} />
+
+      {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
 
       {showConnect && (
         <ConnectDialog

@@ -83,6 +83,13 @@ function registerIpc(): void {
     return ensureClient().call('torrent-set', { ids, ...args });
   });
 
+  ipcMain.handle(
+    'torrents:setLocation',
+    async (_e, ids: number[], location: string, move: boolean): Promise<RpcResult> => {
+      return ensureClient().call('torrent-set-location', { ids, location, move });
+    },
+  );
+
   ipcMain.handle('torrents:action', async (_e, action: string, ids: number[]): Promise<RpcResult> => {
     const c = ensureClient();
     switch (action) {
