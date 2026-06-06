@@ -34,6 +34,19 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "protocols": [
+      {
+        "name": "Magnet URI",
+        "schemes": ["magnet"]
+      }
+    ],
+    "fileAssociations": [
+      {
+        "ext": "torrent",
+        "name": "BitTorrent file",
+        "role": "Editor"
+      }
+    ],
     "win": {
       "target": "nsis"
     },

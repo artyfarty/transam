@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ServerConfig, Torrent, TorrentDetail } from '../shared/types';
+import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload } from '../shared/types';
 import { Toolbar } from './components/Toolbar';
 import { TorrentTable } from './components/TorrentTable';
 import { DetailsPane } from './components/DetailsPane';
@@ -25,7 +25,16 @@ export function App() {
   const [up, setUp] = useState(0);
   const [showConnect, setShowConnect] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
   const timer = useRef<ReturnType<typeof setInterval>>();
+
+  // OS opened a magnet link or .torrent file with us → open the Add dialog.
+  useEffect(() => {
+    return window.api.onOpenAdd((p) => {
+      setAddPrefill(p);
+      setShowAdd(true);
+    });
+  }, []);
 
   // initial config load
   useEffect(() => {
@@ -154,9 +163,18 @@ export function App() {
       )}
       {showAdd && (
         <AddDialog
-          onCancel={() => setShowAdd(false)}
+          prefill={addPrefill}
+          onCancel={() => {
+            setShowAdd(false);
+            setAddPrefill(null);
+          }}
           onAdd={async (opts) => {
-            const r = await window.api.add({ url: opts.url, downloadDir: opts.downloadDir, paused: opts.paused });
+            const r = await window.api.add({
+              url: opts.url,
+              metainfo: opts.metainfo,
+              downloadDir: opts.downloadDir,
+              paused: opts.paused,
+            });
             if (!r.ok) throw new Error(r.result);
             poll();
           }}

@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import type { ServerConfig, RpcResult } from '../shared/types';
+import type { IpcRendererEvent } from 'electron';
+import type { ServerConfig, RpcResult, OpenAddPayload } from '../shared/types';
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
@@ -17,6 +18,11 @@ const api = {
     ipcRenderer.invoke('torrents:add', opts),
   pickFolder: (): Promise<{ local: string; remote: string } | null> =>
     ipcRenderer.invoke('dialog:pickFolder'),
+  onOpenAdd: (cb: (p: OpenAddPayload) => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent, p: OpenAddPayload) => cb(p);
+    ipcRenderer.on('open-add', handler);
+    return () => ipcRenderer.removeListener('open-add', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);

@@ -1,12 +1,15 @@
 import { useState } from 'react';
+import type { OpenAddPayload } from '../../shared/types';
 
 interface Props {
-  onAdd: (opts: { url: string; downloadDir?: string; paused: boolean }) => Promise<void>;
+  prefill?: OpenAddPayload | null;
+  onAdd: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused: boolean }) => Promise<void>;
   onCancel: () => void;
 }
 
-export function AddDialog({ onAdd, onCancel }: Props) {
-  const [url, setUrl] = useState('');
+export function AddDialog({ prefill, onAdd, onCancel }: Props) {
+  const [url, setUrl] = useState(prefill?.url ?? '');
+  const metainfo = prefill?.metainfo;
   const [dir, setDir] = useState('');
   const [paused, setPaused] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -18,14 +21,19 @@ export function AddDialog({ onAdd, onCancel }: Props) {
   }
 
   async function submit() {
-    if (!url.trim()) {
+    if (!metainfo && !url.trim()) {
       setErr('Paste a magnet link or .torrent URL');
       return;
     }
     setBusy(true);
     setErr('');
     try {
-      await onAdd({ url: url.trim(), downloadDir: dir.trim() || undefined, paused });
+      await onAdd({
+        url: metainfo ? undefined : url.trim(),
+        metainfo,
+        downloadDir: dir.trim() || undefined,
+        paused,
+      });
     } catch (e) {
       setErr((e as Error).message);
       setBusy(false);
@@ -38,10 +46,17 @@ export function AddDialog({ onAdd, onCancel }: Props) {
     <div className="modal-back">
       <div className="modal">
         <h2>Add torrent</h2>
-        <div className="field">
-          <label>Magnet link or .torrent URL</label>
-          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="magnet:?xt=…" autoFocus />
-        </div>
+        {metainfo ? (
+          <div className="field">
+            <label>Torrent file</label>
+            <input value={prefill?.name ?? 'torrent'} readOnly />
+          </div>
+        ) : (
+          <div className="field">
+            <label>Magnet link or .torrent URL</label>
+            <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="magnet:?xt=…" autoFocus />
+          </div>
+        )}
         <div className="field">
           <label>Download to (server path)</label>
           <div className="field row2">

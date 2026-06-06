@@ -165,6 +165,13 @@ export interface RpcResult<T = unknown> {
   arguments?: T;
 }
 
+/** Payload sent to the renderer when the OS opens a magnet/.torrent with us. */
+export interface OpenAddPayload {
+  url?: string; // magnet: link or http(s) .torrent URL
+  metainfo?: string; // base64 of a local .torrent file
+  name?: string;
+}
+
 /** Connection state pushed to the renderer. */
 export interface ConnectionState {
   connected: boolean;

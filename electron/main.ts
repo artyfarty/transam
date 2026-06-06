@@ -3,10 +3,11 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TransmissionClient } from './transmission';
 import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
-import type { ServerConfig, RpcResult } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload } from '../shared/types';
 
 let win: BrowserWindow | null = null;
 let client: TransmissionClient | null = null;
+let pendingOpen: OpenAddPayload[] = [];
 
 // --- local config (kept in userData, never in the repo) ---------------------
 function configPath(): string {
@@ -128,6 +129,36 @@ function registerIpc(): void {
   });
 }
 
+// --- OS magnet/.torrent handoff --------------------------------------------
+function sendOpen(p: OpenAddPayload): void {
+  if (win) {
+    if (win.isMinimized()) win.restore();
+    win.focus();
+    if (!win.webContents.isLoading()) {
+      win.webContents.send('open-add', p);
+      return;
+    }
+  }
+  pendingOpen.push(p); // flushed on did-finish-load
+}
+
+function openTorrentFile(file: string): void {
+  try {
+    const metainfo = fs.readFileSync(file).toString('base64');
+    sendOpen({ metainfo, name: path.basename(file) });
+  } catch {
+    /* ignore unreadable file */
+  }
+}
+
+/** Pull a magnet link or a .torrent path out of process argv. */
+function handleArgv(argv: string[]): void {
+  for (const a of argv.slice(1)) {
+    if (/^magnet:/i.test(a)) sendOpen({ url: a });
+    else if (a.toLowerCase().endsWith('.torrent') && fs.existsSync(a)) openTorrentFile(a);
+  }
+}
+
 // --- window -----------------------------------------------------------------
 function createWindow(): void {
   win = new BrowserWindow({
@@ -151,19 +182,45 @@ function createWindow(): void {
     win.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
 
+  win.webContents.on('did-finish-load', () => {
+    const queued = pendingOpen;
+    pendingOpen = [];
+    for (const p of queued) win?.webContents.send('open-add', p);
+  });
+
   win.on('closed', () => {
     win = null;
   });
 }
 
-app.whenReady().then(() => {
-  registerIpc();
-  createWindow();
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+// Single-instance: route a magnet/.torrent opened while we're already running
+// into the existing window instead of spawning a second app.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+} else {
+  app.on('second-instance', (_e, argv) => handleArgv(argv));
+  app.setAsDefaultProtocolClient('magnet');
 
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
-});
+  // macOS hands off via events rather than argv.
+  app.on('open-url', (e, url) => {
+    e.preventDefault();
+    sendOpen({ url });
+  });
+  app.on('open-file', (e, file) => {
+    e.preventDefault();
+    openTorrentFile(file);
+  });
+
+  app.whenReady().then(() => {
+    registerIpc();
+    createWindow();
+    handleArgv(process.argv);
+    app.on('activate', () => {
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  });
+
+  app.on('window-all-closed', () => {
+    if (process.platform !== 'darwin') app.quit();
+  });
+}
