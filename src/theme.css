@@ -399,6 +399,23 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.tag-chip {
+  flex: 0 0 auto;
+  background: var(--accent-dim);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0 5px;
+  margin-right: 5px;
+  font-size: 9.5px;
+  line-height: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cell > .bar {
   width: 100%;
 }

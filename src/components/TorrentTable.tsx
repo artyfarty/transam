@@ -28,7 +28,22 @@ const columns: ColumnDef<Torrent>[] = [
     enableHiding: false,
     cell: ({ row }) => <StatusIcon t={row.original} />,
   },
-  { id: 'name', header: 'Name', size: 360, enableHiding: false, cell: ({ row }) => <span className="ellip">{row.original.name}</span> },
+  {
+    id: 'name',
+    header: 'Name',
+    size: 360,
+    enableHiding: false,
+    cell: ({ row }) => (
+      <>
+        {row.original.labels?.map((l) => (
+          <span key={l} className="tag-chip" title={l}>
+            {l}
+          </span>
+        ))}
+        <span className="ellip">{row.original.name}</span>
+      </>
+    ),
+  },
   {
     id: 'size',
     header: 'Size',
@@ -233,8 +248,7 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
       </div>
 
       {colMenu && (
-        <>
-          <div className="ctx-back" onMouseDown={() => setColMenu(null)} onContextMenu={(e) => e.preventDefault()} />
+        <div className="ctx-back" onMouseDown={() => setColMenu(null)} onContextMenu={(e) => e.preventDefault()}>
           <div className="ctx col-picker" style={{ left: colMenu.x, top: colMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
             <div className="col-picker-head">Columns</div>
             {table
@@ -247,7 +261,7 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
                 </label>
               ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

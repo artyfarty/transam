@@ -8,6 +8,7 @@ import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
 import { AboutModal } from './components/AboutModal';
 import { PreferencesModal } from './components/PreferencesModal';
+import { LabelsDialog } from './components/LabelsDialog';
 import { Sidebar } from './components/Sidebar';
 import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
@@ -280,7 +281,13 @@ export function App() {
   onMenuRef.current = onMenu;
   useEffect(() => window.api.onMenuAction((a) => onMenuRef.current(a)), []);
 
+  const [labelsEdit, setLabelsEdit] = useState<{ ids: number[]; initial: string } | null>(null);
+
   const ctxTarget = () => torrents.find((t) => t.id === ids[0]);
+  function editLabels() {
+    if (!ids.length) return;
+    setLabelsEdit({ ids: [...ids], initial: (ctxTarget()?.labels ?? []).join(', ') });
+  }
   function openFolder() {
     const t = ctxTarget();
     if (t) void window.api.openPath(t.downloadDir);
@@ -297,6 +304,7 @@ export function App() {
     { separator: true },
     { label: 'Open folder', onClick: openFolder },
     { label: 'Show in Explorer', onClick: revealItem },
+    { label: 'Edit labels…', onClick: editLabels },
     { label: 'Verify', onClick: () => act('verify') },
     { label: 'Reannounce', onClick: () => act('reannounce') },
     { label: 'Set location…', onClick: relocate },
@@ -438,6 +446,19 @@ export function App() {
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
       {showPrefs && <PreferencesModal theme={theme} onTheme={setTheme} onClose={() => setShowPrefs(false)} />}
+      {labelsEdit && (
+        <LabelsDialog
+          initial={labelsEdit.initial}
+          count={labelsEdit.ids.length}
+          onCancel={() => setLabelsEdit(null)}
+          onApply={async (labels) => {
+            const r = await window.api.set(labelsEdit.ids, { labels });
+            setLabelsEdit(null);
+            if (!r.ok) setToast(r.result);
+            poll();
+          }}
+        />
+      )}
       {toast && <div className="toast">{toast}</div>}
 
       {showConnect && (
