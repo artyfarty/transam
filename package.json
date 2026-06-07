@@ -1,5 +1,5 @@
 {
-  "name": "transom",
+  "name": "transam",
   "version": "0.1.0",
   "description": "A fast, dark, modern desktop remote for Transmission 4.x",
   "private": true,
@@ -30,8 +30,8 @@
     "vite": "5.4.10"
   },
   "build": {
-    "appId": "dev.transom.app",
-    "productName": "Transom",
+    "appId": "dev.transam.app",
+    "productName": "Transam",
     "files": [
       "dist/**/*",
       "dist-electron/**/*"

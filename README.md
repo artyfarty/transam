@@ -1,4 +1,4 @@
-# Transom
+# Transam
 
 A fast, dark, modern desktop remote for **Transmission 4.x** — a spiritual
 replacement for Transmission Remote GUI, built on a web stack so theming and

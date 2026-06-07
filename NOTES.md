@@ -9,7 +9,7 @@ verify the UI **visually** — that's the first thing to do in the morning.
 From a WSL terminal (it has `DISPLAY` from WSLg):
 
 ```sh
-cd ~/work/transom
+cd ~/work/transam
 pnpm dev      # vite + electron; window shows on Windows via WSLg
 ```
 
