@@ -48,6 +48,23 @@ export function App() {
   const [detailsFrac, setDetailsFrac] = useState<number>(() => loadJSON('detailsFrac', 0.3));
   useEffect(() => saveJSON('detailsFrac', detailsFrac), [detailsFrac]);
   const detailsH = Math.round(clamp(mainH * detailsFrac, 110, Math.max(140, mainH - 110)));
+
+  // recently-used download destinations (MRU) for the Add dialog
+  const [recentDirs, setRecentDirs] = useState<string[]>(() => loadJSON('recentDirs', []));
+  const recordDir = (d?: string) => {
+    if (!d) return;
+    setRecentDirs((prev) => {
+      const next = [d, ...prev.filter((x) => x !== d)].slice(0, 12);
+      saveJSON('recentDirs', next);
+      return next;
+    });
+  };
+  const dirSuggestions = useMemo(() => {
+    const freq = new Map<string, number>();
+    for (const t of torrents) if (t.downloadDir) freq.set(t.downloadDir, (freq.get(t.downloadDir) ?? 0) + 1);
+    const distinct = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d);
+    return [...new Set([...recentDirs, ...distinct])];
+  }, [torrents, recentDirs]);
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
@@ -329,6 +346,8 @@ export function App() {
       {showAdd && (
         <AddDialog
           prefill={addPrefill}
+          suggestions={dirSuggestions}
+          defaultDir={recentDirs[0] ?? ''}
           onCancel={() => {
             setShowAdd(false);
             setAddPrefill(null);
@@ -341,6 +360,7 @@ export function App() {
               paused: opts.paused,
             });
             if (!r.ok) throw new Error(r.result);
+            recordDir(opts.downloadDir);
             poll();
           }}
         />
