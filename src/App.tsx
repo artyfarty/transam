@@ -12,7 +12,7 @@ import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
-import { suggestDir } from './series';
+import { seriesKey, suggestDir } from './series';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
@@ -60,6 +60,30 @@ export function App() {
       return next;
     });
   };
+  // Persistent series-key → folder history, so suggestions survive a torrent
+  // being removed from the list (the live torrents only know about current ones).
+  const [seriesHist, setSeriesHist] = useState<Record<string, string>>(() => loadJSON('seriesHist', {}));
+  useEffect(() => {
+    if (!torrents.length) return;
+    setSeriesHist((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const t of torrents) {
+        if (!t.downloadDir) continue;
+        const k = seriesKey(t.name);
+        if (k.length >= 3 && next[k] !== t.downloadDir) {
+          next[k] = t.downloadDir;
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const capped =
+        Object.keys(next).length > 600 ? Object.fromEntries(Object.entries(next).slice(-600)) : next;
+      saveJSON('seriesHist', capped);
+      return capped;
+    });
+  }, [torrents]);
+
   const dirSuggestions = useMemo(() => {
     const freq = new Map<string, number>();
     for (const t of torrents) if (t.downloadDir) freq.set(t.downloadDir, (freq.get(t.downloadDir) ?? 0) + 1);
@@ -403,7 +427,7 @@ export function App() {
           prefill={addPrefill}
           suggestions={dirSuggestions}
           defaultDir={recentDirs[0] ?? ''}
-          suggestDir={(name) => suggestDir(name, torrents)}
+          suggestDir={(name) => suggestDir(name, torrents) ?? seriesHist[seriesKey(name)]}
           onCancel={() => {
             setShowAdd(false);
             setAddPrefill(null);
