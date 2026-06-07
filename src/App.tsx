@@ -67,13 +67,20 @@ export function App() {
   useEffect(() => {
     if (!torrents.length) return;
     setSeriesHist((prev) => {
-      let changed = false;
-      const next = { ...prev };
+      // per series key, remember the folder of the most recently added torrent
+      const latest = new Map<string, { dir: string; ts: number }>();
       for (const t of torrents) {
         if (!t.downloadDir) continue;
         const k = seriesKey(t.name);
-        if (k.length >= 3 && next[k] !== t.downloadDir) {
-          next[k] = t.downloadDir;
+        if (k.length < 3) continue;
+        const cur = latest.get(k);
+        if (!cur || (t.addedDate ?? 0) > cur.ts) latest.set(k, { dir: t.downloadDir, ts: t.addedDate ?? 0 });
+      }
+      let changed = false;
+      const next = { ...prev };
+      for (const [k, v] of latest) {
+        if (next[k] !== v.dir) {
+          next[k] = v.dir;
           changed = true;
         }
       }

@@ -45,16 +45,26 @@ export function extractName(input: string): string {
   }
 }
 
-/** Suggest the folder used by existing torrents that share this series key. */
-export function suggestDir(name: string, items: { name: string; downloadDir: string }[]): string | undefined {
+/**
+ * Suggest the folder for a series. When several folders match (e.g. S2 and S3
+ * of the same show), prefer the one used by the most recently added torrent —
+ * that's normally the latest season you're still grabbing.
+ */
+export function suggestDir(
+  name: string,
+  items: { name: string; downloadDir: string; addedDate?: number }[],
+): string | undefined {
   const key = seriesKey(name);
   if (key.length < 3) return undefined;
-  const freq = new Map<string, number>();
-  for (const t of items) {
-    if (t.downloadDir && seriesKey(t.name) === key) freq.set(t.downloadDir, (freq.get(t.downloadDir) ?? 0) + 1);
-  }
   let best: string | undefined;
-  let n = 0;
-  for (const [d, c] of freq) if (c > n) [best, n] = [d, c];
+  let bestTs = -Infinity;
+  for (const t of items) {
+    if (!t.downloadDir || seriesKey(t.name) !== key) continue;
+    const ts = t.addedDate ?? 0;
+    if (ts >= bestTs) {
+      bestTs = ts;
+      best = t.downloadDir;
+    }
+  }
   return best;
 }
