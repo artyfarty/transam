@@ -13,6 +13,7 @@ const api = {
   getTorrents: (ids?: number[]): Promise<RpcResult> => ipcRenderer.invoke('torrents:get', ids),
   sessionStats: (): Promise<RpcResult> => ipcRenderer.invoke('session:stats'),
   sessionGet: (fields?: string[]): Promise<RpcResult> => ipcRenderer.invoke('session:get', fields),
+  portTest: (): Promise<RpcResult> => ipcRenderer.invoke('session:portTest'),
   sessionSet: (args: Record<string, unknown>): Promise<RpcResult> => ipcRenderer.invoke('session:set', args),
   detail: (id: number): Promise<RpcResult> => ipcRenderer.invoke('torrents:detail', id),
   set: (ids: number[], args: Record<string, unknown>): Promise<RpcResult> =>

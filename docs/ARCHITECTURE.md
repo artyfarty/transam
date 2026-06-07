@@ -39,7 +39,8 @@ view that issues intents over IPC.
 | `torrents:set` | generic `torrent-set` (file priorities, seeding limits…) |
 | `torrents:setLocation` | `torrent-set-location` (move) |
 | `torrents:add` | `torrent-add` (url/magnet or base64 metainfo) |
-| `session:stats` / `session:get` / `session:set` | speeds + global limits |
+| `session:stats` / `session:get` / `session:set` | speeds + global limits + all server settings |
+| `session:portTest` | `port-test` for the Server Parameters dialog |
 | `dialog:pickFolder` | native folder picker → `{local, remote}` (mapped) |
 | `shell:openPath` / `shell:showItem` | open / reveal a daemon path locally |
 | `menu-action` (main→renderer) | native menu item clicked |

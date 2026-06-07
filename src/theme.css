@@ -1300,3 +1300,189 @@ table.files select {
 .picker-cancel:hover {
   color: var(--text);
 }
+
+/* ---- server parameters modal ---- */
+.modal.server {
+  width: 560px;
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: 14px;
+}
+.modal.server h2 {
+  flex: 0 0 auto;
+}
+.modal .tabs {
+  display: flex;
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+.modal .tab {
+  padding: 6px 14px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.modal .tab:hover {
+  background: var(--hover);
+}
+.modal .tab.active {
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+.server-body {
+  flex: 1 1 auto;
+  overflow: auto;
+  padding-right: 4px;
+}
+.cfg-loading {
+  color: var(--text-dim);
+  padding: 20px 0;
+}
+.cfg-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 5px 0;
+}
+.cfg-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.cfg-name {
+  flex: 1 1 auto;
+}
+.cfg-gate {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.cfg-num {
+  width: 90px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 5px 7px;
+  font: inherit;
+  text-align: right;
+}
+.cfg-num:disabled {
+  opacity: 0.45;
+}
+.cfg-unit {
+  width: 36px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+.cfg-time {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 6px;
+  font: inherit;
+}
+.cfg-time:disabled {
+  opacity: 0.45;
+}
+.cfg-sub {
+  padding: 4px 0 4px 0;
+}
+.cfg-text-row {
+  display: flex;
+  gap: 6px;
+}
+.cfg-text-row input {
+  flex: 1 1 auto;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+}
+.cfg-text-row input:disabled {
+  opacity: 0.45;
+}
+.cfg-area {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 6px 8px;
+  font: inherit;
+  resize: vertical;
+  width: 100%;
+}
+.cfg-group {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin: 12px 0 4px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.cfg-group:first-child {
+  margin-top: 0;
+}
+.cfg-days {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 6px 0;
+}
+.cfg-day {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px 7px;
+}
+.cfg-day.on {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.cfg-note,
+.cfg-portmsg {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.cfg-note {
+  margin-bottom: 8px;
+}
+.cfg-portmsg {
+  margin-left: 8px;
+}
+.browse-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 5px 11px;
+  font: inherit;
+  white-space: nowrap;
+}
+.browse-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.browse-btn:disabled {
+  opacity: 0.45;
+}
+.browse-btn.port-test {
+  margin: 4px 0;
+}

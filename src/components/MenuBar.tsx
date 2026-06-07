@@ -17,6 +17,7 @@ const MENUS: Menu[] = [
       { label: 'Add Torrent / Magnet…', action: 'add' },
       { sep: true },
       { label: 'Connection Settings…', action: 'settings' },
+      { label: 'Server Parameters…', action: 'server-params' },
       { label: 'Client Preferences…', action: 'preferences' },
       { sep: true },
       { label: 'Quit', action: 'quit' },

@@ -14,9 +14,10 @@ Targets Transmission 4.x (rpc-version ≥ 17). Endpoint: `POST {scheme}://{host}
 
 | Method | When | Notes |
 | --- | --- | --- |
-| `session-get` | connect / poll | `version`, `rpc-version`; speed-limit fields |
+| `session-get` | connect / poll / **Server Parameters** | `version`, `rpc-version`; speed-limit fields; the full settings set below |
 | `session-stats` | poll | `downloadSpeed`, `uploadSpeed` |
-| `session-set` | speed limit popover | `speed-limit-(down\|up)[-enabled]` |
+| `session-set` | speed popover + **Server Parameters** | speed limits, plus the full settings set below |
+| `port-test` | Server Parameters → Test port | returns `{ port-is-open }` |
 | `torrent-get` | poll (list) | summary fields (see below) |
 | `torrent-get` | selection (detail) | `files`, `fileStats`, `peers`, `trackerStats`, `pieces`, seeding fields |
 | `torrent-start` / `-start-now` / `-stop` | actions | |
@@ -39,6 +40,34 @@ queuePosition`
 `id, name, comment, hashString, pieceCount, pieceSize, pieces, dateCreated,
 downloadDir, files, fileStats, peers, trackerStats, seedRatioLimit,
 seedRatioMode, seedIdleLimit, seedIdleMode`
+
+## Server Parameters (`session-set` / `session-get`)
+
+The **Server Parameters** dialog (`ServerParamsModal`) reads and writes every
+mutable session field, grouped into five tabs. Fields the server doesn't return
+(older daemons) are hidden, so the dialog adapts to the connected version.
+
+- **Downloads** — `download-dir`, `incomplete-dir[-enabled]`,
+  `rename-partial-files`, `cache-size-mb`, `start-added-torrents`,
+  `trash-original-torrent-files`, `seedRatioLimit[ed]`,
+  `idle-seeding-limit[-enabled]`.
+- **Network** — `peer-port`, `peer-port-random-on-start`,
+  `port-forwarding-enabled`, `encryption` (`tolerated`/`preferred`/`required`),
+  `peer-limit-global`, `peer-limit-per-torrent`, `pex-enabled`, `dht-enabled`,
+  `lpd-enabled`, `utp-enabled`, `blocklist-enabled` + `blocklist-url`,
+  `default-trackers` (newline-separated), plus a `port-test` button.
+- **Bandwidth** — `speed-limit-(down\|up)[-enabled]`, `alt-speed-(down\|up)`,
+  `alt-speed-enabled`, `alt-speed-time-enabled`, `alt-speed-time-(begin\|end)`
+  (minutes since midnight), `alt-speed-time-day` (bitfield, bit0 = Sunday).
+- **Queue** — `download-queue-(enabled\|size)`, `seed-queue-(enabled\|size)`,
+  `queue-stalled-(enabled\|minutes)`.
+- **Scripts** — `script-torrent-added-(enabled\|filename)`,
+  `script-torrent-done-(enabled\|filename)`,
+  `script-torrent-done-seeding-(enabled\|filename)`.
+
+Folder fields use the native picker → daemon path via the same path mapping as
+the rest of the app. `download-dir`/`incomplete-dir`/script paths are on the
+**server's** filesystem.
 
 ## Status codes
 

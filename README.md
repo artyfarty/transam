@@ -23,6 +23,10 @@ a light theme available. English-only UI.
 - **Details** — overview with a piece-availability map and per-torrent seeding
   limits; Files (with per-file progress, priorities, double-click to open);
   Peers; Trackers.
+- **Server parameters** — a full daemon-settings editor (File → Server
+  Parameters): downloads, network (with a port test), bandwidth incl. the
+  scheduled alternate "turtle" limits, queueing, and the torrent script hooks —
+  every editable Transmission session setting, adapting to the server's version.
 - **Open from anywhere** — handles `magnet:` links and `.torrent` files clicked
   in your browser/Explorer; double-click a file to open it (or *Show in
   Explorer*) on the mapped network drive.

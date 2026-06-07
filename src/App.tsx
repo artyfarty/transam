@@ -8,6 +8,7 @@ import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
 import { AboutModal } from './components/AboutModal';
 import { PreferencesModal } from './components/PreferencesModal';
+import { ServerParamsModal } from './components/ServerParamsModal';
 import { LabelsDialog } from './components/LabelsDialog';
 import { Sidebar } from './components/Sidebar';
 import { Splitter } from './components/Splitter';
@@ -133,6 +134,7 @@ export function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [showServer, setShowServer] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>(() => loadJSON('theme', 'dark'));
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -317,6 +319,7 @@ export function App() {
     else if (a === 'settings') setShowConnect(true);
     else if (a === 'about') setShowAbout(true);
     else if (a === 'preferences') setShowPrefs(true);
+    else if (a === 'server-params') setShowServer(true);
     else if (a === 'relocate') relocate();
     else if (a === 'quit') window.close();
     else act(a);
@@ -515,6 +518,7 @@ export function App() {
           onClose={() => setShowPrefs(false)}
         />
       )}
+      {showServer && <ServerParamsModal onClose={() => setShowServer(false)} onSaved={poll} />}
       {labelsEdit && (
         <LabelsDialog
           initial={labelsEdit.initial}

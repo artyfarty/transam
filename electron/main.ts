@@ -136,6 +136,10 @@ function registerIpc(): void {
     return ensureClient().call('session-set', args);
   });
 
+  ipcMain.handle('session:portTest', async (): Promise<RpcResult> => {
+    return ensureClient().call('port-test');
+  });
+
   ipcMain.handle('torrents:detail', async (_e, id: number): Promise<RpcResult> => {
     return ensureClient().call('torrent-get', { ids: [id], fields: DETAIL_FIELDS });
   });
