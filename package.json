@@ -33,6 +33,9 @@
     "appId": "dev.transam.app",
     "productName": "Transam",
     "icon": "build/icon.ico",
+    "directories": {
+      "output": "release"
+    },
     "files": [
       "dist/**/*",
       "dist-electron/**/*"

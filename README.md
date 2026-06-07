@@ -1,49 +1,48 @@
 # Transam
 
-A fast, dark, modern desktop remote for **Transmission 4.x** — a web-stack
-replacement for Transmission Remote GUI, with native OS integration.
-
-- **Stack:** Electron + React + TypeScript + Vite. The Transmission RPC runs in
-  the Electron main process (no browser CORS limits). The renderer is a dense,
-  dark, uTorrent-style UI.
-- **English only**, targets the modern Transmission RPC (rpc-version ≥ 17).
+A fast, dark, modern desktop remote for **Transmission 4.x** — a replacement for
+Transmission Remote GUI, with native OS integration. English-only.
 
 ## Features
 
-- **Torrent list** — dense, dark, virtualized table (TanStack Table + Virtual);
-  resizable/sortable columns, a right-click **column picker** (show/hide),
-  arrow-key navigation, coloured **status badges**, red bar for errored
-  torrents, an **Added** date column, and a ratio cell that becomes a
-  **progress bar toward the seed-ratio limit**.
-- **Labels** — server-side labels shown as coloured **tag chips** after the
-  name; edit them per selection; **path→label rules** with wildcards in
-  settings (defaults: `*/Movies/*`→Movie, `*/Anime/*`→Anime, `*/TV Shows/*`→TV
-  Show) auto-apply to new torrents, with an *Apply to existing* button.
-- **Sidebar** — collapsible category filters (All/Downloading/Seeding/Active/
-  Paused/Checking/Error) + dynamic label filters; search box.
-- **Menu + toolbar** — a custom File/Edit/Help menu bar (with About) sharing the
-  toolbar row; Add / Start / Pause / Remove buttons.
-- **Right-click menus** — torrents (start/pause/verify/reannounce/set-location/
-  labels/open folder/show in Explorer/remove); files (open/reveal/priority/skip).
-- **Details** — redesigned General (name, big progress bar, **piece-availability
-  map**, tidy Transfer/Info, **per-torrent seeding limits**), Files (progress
-  bars, resizable columns, selection, double-click to open), Peers, Trackers.
-- **Add wizard** — two steps: paste a magnet / .torrent URL or pick a file (step
-  skipped when opened via the OS), then a **preview** parsed locally (name,
-  size, files / hash + trackers) where you choose the destination. Native
-  server-folder picker with local↔remote **path mapping**, **MRU destinations**,
-  and a **series heuristic** that suggests the folder of other episodes (latest
-  season wins).
-- **OS integration** — registers as the `magnet:` handler and `.torrent` file
-  association (button in settings); single-instance; opens/reveals remote files
-  via the mapped path.
-- **Preferences** — dark/light **theme**, **interface scale** (accessibility),
-  label rules, file associations.
-- **Durable** — RPC timeouts, non-overlapping polls, reconnect banner, error
-  toasts, an error boundary, and a shimmer over rows while an action is in
-  flight. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#durability).
-- **Locale-aware** dates (OS regional settings); **persisted UI** — theme,
-  scale, sort, filter, panel sizes, column widths/visibility, window state.
+- **Torrent list** — a dense, uTorrent-style table: sort by any column, drag to
+  resize, right-click the header to show/hide columns, navigate with the arrow
+  keys. Coloured status badges, a red bar for errored torrents, an *Added*
+  date, and a ratio cell that fills toward your seed-ratio limit.
+- **Labels** — shown as coloured tag chips after the name; edit them from the
+  right-click menu. **Auto-labelling rules** (path wildcard → label, e.g.
+  `*/Movies/*` → Movie) tag new torrents automatically, with a one-click
+  *Apply to existing* in settings.
+- **Sidebar** — collapsible filters by category (Downloading, Seeding, Paused,
+  Error, …) and by label; plus a search box.
+- **Add** — paste a magnet / .torrent link or pick a file, then see a **preview**
+  (name, size, file list) before adding and choose where to save. Picks the
+  destination smartly: recent folders, and a **series guesser** that drops new
+  episodes next to the rest of the show (newest season wins).
+- **Details** — overview with a piece-availability map and per-torrent seeding
+  limits; Files (with per-file progress, priorities, double-click to open);
+  Peers; Trackers.
+- **Open from anywhere** — handles `magnet:` links and `.torrent` files clicked
+  in your browser/Explorer; double-click a file to open it (or *Show in
+  Explorer*) on the mapped network drive.
+- **Save where it lives on the server** — pick the destination through a native
+  folder dialog on your mounted share; Transam maps it to the daemon's path.
+- **Preferences** — light/dark theme, interface **scale** (for bigger text),
+  label rules, register file associations.
+- **Stays responsive** — never freezes waiting on the server: it reconnects on
+  its own, shows errors as toasts, and animates a row while its action is in
+  flight. Remembers your layout (columns, panels, sort, window size) and shows
+  dates in your regional format.
+
+## Under the hood
+
+Electron + React + TypeScript + Vite. The Transmission RPC runs in the Electron
+**main process** (no browser CORS limits); the renderer is a pure view that
+sends intents over a typed IPC bridge. The torrent table is virtualized for
+thousands of rows, the durability behaviour (timeouts, non-overlapping polls,
+error boundary) is deliberate, and `.torrent`/magnet previews are parsed locally
+without touching the daemon. Targets Transmission RPC ≥ 17. Details in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/RPC.md](docs/RPC.md).
 
 ## Run / develop
 
