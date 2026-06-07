@@ -24,6 +24,7 @@ const api = {
     ipcRenderer.invoke('dialog:pickFolder'),
   openPath: (daemonPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', daemonPath),
   showItem: (daemonPath: string): Promise<void> => ipcRenderer.invoke('shell:showItem', daemonPath),
+  associate: (): Promise<string> => ipcRenderer.invoke('app:associate'),
   onOpenAdd: (cb: (p: OpenAddPayload) => void): (() => void) => {
     const handler = (_e: IpcRendererEvent, p: OpenAddPayload) => cb(p);
     ipcRenderer.on('open-add', handler);

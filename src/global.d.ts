@@ -18,6 +18,7 @@ declare global {
       pickFolder(): Promise<{ local: string; remote: string } | null>;
       openPath(daemonPath: string): Promise<string>;
       showItem(daemonPath: string): Promise<void>;
+      associate(): Promise<string>;
       onOpenAdd(cb: (p: OpenAddPayload) => void): () => void;
       onMenuAction(cb: (action: string) => void): () => void;
     };

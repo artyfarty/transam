@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar';
 import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
 import { AboutModal } from './components/AboutModal';
+import { PreferencesModal } from './components/PreferencesModal';
 import { Sidebar } from './components/Sidebar';
 import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
@@ -96,6 +97,12 @@ export function App() {
   const [showConnect, setShowConnect] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showPrefs, setShowPrefs] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => loadJSON('theme', 'dark'));
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    saveJSON('theme', theme);
+  }, [theme]);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
 
   // OS opened a magnet link or .torrent file with us → open the Add dialog.
@@ -257,6 +264,7 @@ export function App() {
     if (a === 'add') setShowAdd(true);
     else if (a === 'settings') setShowConnect(true);
     else if (a === 'about') setShowAbout(true);
+    else if (a === 'preferences') setShowPrefs(true);
     else if (a === 'relocate') relocate();
     else act(a);
   };
@@ -410,6 +418,7 @@ export function App() {
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {showPrefs && <PreferencesModal theme={theme} onTheme={setTheme} onClose={() => setShowPrefs(false)} />}
       {toast && <div className="toast">{toast}</div>}
 
       {showConnect && (

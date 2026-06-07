@@ -2,6 +2,8 @@ import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
 import type { MenuItemConstructorOptions } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { TransmissionClient } from './transmission';
 import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
 import type { ServerConfig, RpcResult, OpenAddPayload } from '../shared/types';
@@ -48,6 +50,19 @@ function remoteToLocal(cfg: ServerConfig, remote: string): string {
     }
   }
   return remote;
+}
+
+const pexec = promisify(execFile);
+async function registerTorrentAssoc(): Promise<void> {
+  const exe = process.execPath;
+  const root = 'HKCU\\Software\\Classes';
+  const cmds: string[][] = [
+    [`${root}\\.torrent`, '/ve', '/d', 'Transam.torrent', '/f'],
+    [`${root}\\Transam.torrent`, '/ve', '/d', 'BitTorrent file', '/f'],
+    [`${root}\\Transam.torrent\\DefaultIcon`, '/ve', '/d', `${exe},0`, '/f'],
+    [`${root}\\Transam.torrent\\shell\\open\\command`, '/ve', '/d', `"${exe}" "%1"`, '/f'],
+  ];
+  for (const c of cmds) await pexec('reg', ['add', ...c]);
 }
 
 function ensureClient(): TransmissionClient {
@@ -161,6 +176,23 @@ function registerIpc(): void {
     shell.showItemInFolder(cfg ? remoteToLocal(cfg, daemonPath) : daemonPath);
   });
 
+  // Register as the magnet: protocol handler and the .torrent file association.
+  ipcMain.handle('app:associate', async (): Promise<string> => {
+    const out: string[] = [];
+    out.push(app.setAsDefaultProtocolClient('magnet') ? 'magnet: registered' : 'magnet: failed');
+    if (process.platform === 'win32') {
+      try {
+        await registerTorrentAssoc();
+        out.push('.torrent: registered');
+      } catch (e) {
+        out.push(`.torrent: ${(e as Error).message}`);
+      }
+    } else {
+      out.push('.torrent: only on Windows (use the packaged installer elsewhere)');
+    }
+    return out.join('\n');
+  });
+
   // Native folder picker that maps the chosen local path to the daemon path.
   ipcMain.handle('dialog:pickFolder', async (): Promise<{ local: string; remote: string } | null> => {
     if (!win) return null;
@@ -234,6 +266,8 @@ function buildMenu(): void {
         { type: 'separator' },
         { label: 'Remove', click: () => send('remove') },
         { label: 'Remove + Delete Data', click: () => send('remove-data') },
+        { type: 'separator' },
+        { label: 'Client Preferences…', click: () => send('preferences') },
       ],
     },
     {
