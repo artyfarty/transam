@@ -23,6 +23,23 @@ export interface PathMapping {
   remote: string;
 }
 
+/** A connection profile imported from a legacy Transmission Remote GUI (transgui.ini). */
+export interface ImportedProfile {
+  /** The profile name from transgui's [Hosts]/section (e.g. "Home server"). */
+  name: string;
+  config: ServerConfig;
+}
+
+/** Result of trying to import connection profiles from transgui. */
+export interface ImportResult {
+  found: boolean;
+  /** The transgui.ini that was read, if any. */
+  path?: string;
+  profiles: ImportedProfile[];
+  /** Set when a file was read but could not be parsed. */
+  error?: string;
+}
+
 /** Transmission status codes (torrent-get "status" field). */
 export enum TorrentStatus {
   Stopped = 0,

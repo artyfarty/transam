@@ -1,11 +1,14 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult } from '../shared/types';
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
   getConfig: (): Promise<ServerConfig | null> => ipcRenderer.invoke('config:get'),
   setConfig: (cfg: ServerConfig): Promise<boolean> => ipcRenderer.invoke('config:set', cfg),
+  importTransgui: (explicitPath?: string): Promise<ImportResult> =>
+    ipcRenderer.invoke('config:importTransgui', explicitPath),
+  pickImportFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickImportFile'),
   test: (): Promise<RpcResult> => ipcRenderer.invoke('rpc:test'),
   getTorrents: (ids?: number[]): Promise<RpcResult> => ipcRenderer.invoke('torrents:get', ids),
   sessionStats: (): Promise<RpcResult> => ipcRenderer.invoke('session:stats'),

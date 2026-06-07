@@ -30,6 +30,8 @@ view that issues intents over IPC.
 | Channel | Purpose |
 | --- | --- |
 | `config:get` / `config:set` | server connection config (in `userData`) |
+| `config:importTransgui` | parse connection profiles from a legacy `transgui.ini` |
+| `dialog:pickImportFile` | pick a `transgui.ini` when auto-detect misses |
 | `rpc:test` | `session-get` for version / liveness |
 | `torrents:get` | `torrent-get` list (summary fields) |
 | `torrents:detail` | `torrent-get` for one id (files/peers/trackers/pieces…) |
@@ -73,6 +75,24 @@ numbers, resolution noise) to a stable key. When adding, the dialog computes the
 key for the new torrent (from the magnet `dn` or `.torrent` name) and suggests
 the download folder most used by existing torrents with the same key — until the
 user edits the destination.
+
+## Importing from Transmission Remote GUI
+
+The Connect dialog can pull connection profiles from a legacy **Transmission
+Remote GUI** install (`electron/importTransgui.ts`). transgui stores its config
+in an INI file, auto-located under the standard config dirs (it ships as
+`%LOCALAPPDATA%\Transmission Remote GUI\transgui.ini`; Roaming, alternate folder
+names, and a portable layout are also probed). If auto-detection misses, the
+user can point at the file.
+
+Each `[Connection.<name>]` section (or the legacy single `[Connection]`) becomes
+a profile; `[Hosts]` gives the order and the current one. Mapped fields: `Host`,
+`Port`, `UserName`, `Password` (base64, or `-` = not stored → blank), `UseSSL` →
+`useHttps`, `RpcPath` (default `/transmission/rpc`), and `PathMap` — transgui's
+`remote=local` entries joined by `|`, which map to our `{ remote, local }`
+pairs. Proxy settings are intentionally not imported (unsupported). With one
+profile the form is filled directly; with several the user picks one. Nothing is
+saved until they hit Connect.
 
 ## Durability
 

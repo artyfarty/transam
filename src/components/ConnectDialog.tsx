@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { ServerConfig, PathMapping } from '../../shared/types';
+import type { ServerConfig, PathMapping, ImportedProfile } from '../../shared/types';
 
 const DEFAULTS: ServerConfig = {
   host: '',
@@ -21,8 +21,39 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
   const [cfg, setCfg] = useState<ServerConfig>({ ...DEFAULTS, ...(initial ?? {}) });
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
+  const [importNote, setImportNote] = useState('');
+  const [picker, setPicker] = useState<ImportedProfile[] | null>(null);
 
   const up = (patch: Partial<ServerConfig>) => setCfg((c) => ({ ...c, ...patch }));
+
+  function applyProfile(p: ImportedProfile) {
+    setCfg({ ...DEFAULTS, ...p.config });
+    setPicker(null);
+    setErr('');
+    setImportNote(`Imported “${p.name}” — review and Connect.`);
+  }
+
+  async function doImport() {
+    setErr('');
+    setImportNote('');
+    let r = await window.api.importTransgui();
+    if (!r.found) {
+      // Auto-detect missed it; let the user point at the file.
+      const chosen = await window.api.pickImportFile();
+      if (!chosen) return;
+      r = await window.api.importTransgui(chosen);
+    }
+    if (r.error) {
+      setErr(`Couldn’t read transgui settings: ${r.error}`);
+      return;
+    }
+    if (!r.profiles.length) {
+      setImportNote('No connection profiles found in the transgui settings.');
+      return;
+    }
+    if (r.profiles.length === 1) applyProfile(r.profiles[0]);
+    else setPicker(r.profiles);
+  }
 
   const mappings: PathMapping[] = cfg.pathMappings ?? [];
   const setMappings = (m: PathMapping[]) => up({ pathMappings: m });
@@ -54,6 +85,12 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
     <div className="modal-back">
       <div className="modal">
         <h2>Connect to Transmission</h2>
+        <div className="import-row">
+          <button className="import-btn" onClick={doImport} disabled={busy} type="button">
+            Import from Transmission Remote GUI…
+          </button>
+          {importNote && <span className="import-note">{importNote}</span>}
+        </div>
         <div className="field">
           <label>Host</label>
           <input value={cfg.host} onChange={(e) => up({ host: e.target.value })} placeholder="nas.local or 192.168.x.x" autoFocus />
@@ -121,6 +158,25 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
             {busy ? 'Connecting…' : 'Connect'}
           </button>
         </div>
+
+        {picker && (
+          <div className="picker-back" onMouseDown={() => setPicker(null)}>
+            <div className="picker" onMouseDown={(e) => e.stopPropagation()}>
+              <div className="picker-head">Choose a profile to import</div>
+              {picker.map((p) => (
+                <button key={p.name} className="picker-item" onClick={() => applyProfile(p)} type="button">
+                  <span className="picker-name">{p.name}</span>
+                  <span className="picker-sub">
+                    {p.config.useHttps ? 'https' : 'http'}://{p.config.host}:{p.config.port}
+                  </span>
+                </button>
+              ))}
+              <button className="picker-cancel" onClick={() => setPicker(null)} type="button">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

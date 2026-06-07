@@ -28,6 +28,9 @@ a light theme available. English-only UI.
   Explorer*) on the mapped network drive.
 - **Save where it lives on the server** — pick the destination through a native
   folder dialog on your mounted share; Transam maps it to the daemon's path.
+- **Import from Transmission Remote GUI** — the Connect dialog finds your old
+  `transgui.ini` automatically and imports its connection profiles (host, port,
+  auth, HTTPS, and path mappings); pick one if you had several.
 - **Preferences** — theme (**dark by default, light available**), interface
   **scale** (for bigger text), label rules, register file associations.
 - **Stays responsive** — never freezes waiting on the server: it reconnects on

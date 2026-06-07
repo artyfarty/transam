@@ -7,6 +7,7 @@ import { TransmissionClient } from './transmission';
 import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
 import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
 import { parseTorrentFile } from './bencode';
+import { importProfiles } from './importTransgui';
 
 let win: BrowserWindow | null = null;
 let client: TransmissionClient | null = null;
@@ -82,6 +83,29 @@ function registerIpc(): void {
     saveConfig(cfg);
     client = new TransmissionClient(cfg);
     return true;
+  });
+
+  // Standard places a legacy transgui install keeps its config.
+  function transguiSearchDirs(): string[] {
+    const roaming = app.getPath('appData'); // %APPDATA% (Roaming)
+    const local = path.join(roaming, '..', 'Local'); // %LOCALAPPDATA%
+    return [local, roaming, app.getPath('home')];
+  }
+
+  ipcMain.handle('config:importTransgui', (_e, explicitPath?: string) =>
+    importProfiles(transguiSearchDirs(), explicitPath),
+  );
+
+  ipcMain.handle('dialog:pickImportFile', async (): Promise<string | null> => {
+    const r = await dialog.showOpenDialog({
+      title: 'Select transgui.ini',
+      properties: ['openFile'],
+      filters: [
+        { name: 'transgui settings', extensions: ['ini'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+    });
+    return r.canceled || !r.filePaths[0] ? null : r.filePaths[0];
   });
 
   ipcMain.handle('rpc:test', async (): Promise<RpcResult> => {

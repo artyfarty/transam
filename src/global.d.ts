@@ -1,10 +1,12 @@
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult } from '../shared/types';
 
 declare global {
   interface Window {
     api: {
       getConfig(): Promise<ServerConfig | null>;
       setConfig(cfg: ServerConfig): Promise<boolean>;
+      importTransgui(explicitPath?: string): Promise<ImportResult>;
+      pickImportFile(): Promise<string | null>;
       test(): Promise<RpcResult>;
       getTorrents(ids?: number[]): Promise<RpcResult>;
       sessionStats(): Promise<RpcResult>;

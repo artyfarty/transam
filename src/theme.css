@@ -1206,3 +1206,97 @@ table.files select {
   color: var(--text);
   border-color: var(--accent);
 }
+
+/* ---- import from transgui ---- */
+.modal {
+  position: relative;
+}
+.import-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.import-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 5px 11px;
+  font: inherit;
+}
+.import-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.import-note {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.picker-back {
+  position: absolute;
+  inset: 0;
+  background: #0007;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.picker {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  width: 300px;
+  max-height: 80%;
+  overflow: auto;
+  box-shadow: 0 10px 30px #0009;
+}
+.picker-head {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.picker-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 7px 10px;
+  margin-bottom: 6px;
+  font: inherit;
+}
+.picker-item:hover {
+  border-color: var(--accent);
+  background: var(--hover);
+}
+.picker-name {
+  font-weight: 600;
+}
+.picker-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.picker-cancel {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 5px;
+  font: inherit;
+  margin-top: 2px;
+}
+.picker-cancel:hover {
+  color: var(--text);
+}
