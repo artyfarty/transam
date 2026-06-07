@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Torrent, TorrentDetail } from '../../shared/types';
-import { humanSize, speed, percent, ratio, eta, statusText } from '../format';
+import { humanSize, speed, percent, ratio, eta, statusText, dateTimeLong } from '../format';
 import { PieceBar } from './PieceBar';
 import { FilesTable } from './FilesTable';
 import { StatusIcon } from './icons';
@@ -57,7 +57,7 @@ function KV({ k, v, wide }: { k: string; v: React.ReactNode; wide?: boolean }) {
 }
 
 function General({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onRefresh: () => void }) {
-  const added = t.addedDate ? new Date(t.addedDate * 1000).toLocaleString() : '—';
+  const added = dateTimeLong(t.addedDate) || '—';
   const done = t.percentDone >= 1;
   return (
     <div className="general">

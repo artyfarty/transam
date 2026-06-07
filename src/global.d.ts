@@ -21,6 +21,7 @@ declare global {
       openPath(daemonPath: string): Promise<string>;
       showItem(daemonPath: string): Promise<void>;
       associate(): Promise<string>;
+      getLocale(): Promise<string>;
       onOpenAdd(cb: (p: OpenAddPayload) => void): () => void;
       onMenuAction(cb: (action: string) => void): () => void;
     };

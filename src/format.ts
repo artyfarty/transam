@@ -67,6 +67,21 @@ export function isActive(t: Torrent): boolean {
   return t.status === TorrentStatus.Download || t.status === TorrentStatus.Seed;
 }
 
+// Date formatting honours the OS regional locale (set from app.getSystemLocale
+// via setDateLocale on startup); falls back to the runtime default until then.
+let _locale: string | undefined;
+export function setDateLocale(l: string): void {
+  _locale = l || undefined;
+}
+export function dateTime(ts: number): string {
+  if (!ts) return '';
+  return new Date(ts * 1000).toLocaleString(_locale, { dateStyle: 'short', timeStyle: 'short' });
+}
+export function dateTimeLong(ts: number): string {
+  if (!ts) return '';
+  return new Date(ts * 1000).toLocaleString(_locale, { dateStyle: 'medium', timeStyle: 'medium' });
+}
+
 const LABEL_PALETTE = [
   '#4b8ed6',
   '#4cae73',

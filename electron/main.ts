@@ -176,6 +176,9 @@ function registerIpc(): void {
     shell.showItemInFolder(cfg ? remoteToLocal(cfg, daemonPath) : daemonPath);
   });
 
+  // OS regional locale (for date/number formatting in the renderer).
+  ipcMain.handle('app:getLocale', () => app.getSystemLocale());
+
   // Register as the magnet: protocol handler and the .torrent file association.
   ipcMain.handle('app:associate', async (): Promise<string> => {
     const out: string[] = [];

@@ -10,7 +10,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Torrent } from '../../shared/types';
 import { TorrentStatus } from '../../shared/types';
-import { humanSize, speed, percent, ratio, eta, statusText, labelColor } from '../format';
+import { humanSize, speed, percent, ratio, eta, statusText, labelColor, dateTime } from '../format';
 import { StatusIcon } from './icons';
 import { loadJSON, saveJSON } from '../persist';
 import type { SortState } from '../sort';
@@ -76,20 +76,9 @@ const columns: ColumnDef<Torrent>[] = [
     id: 'added',
     header: 'Added',
     size: 130,
-    cell: ({ row }) => <span className="num">{addedStr(row.original.addedDate)}</span>,
+    cell: ({ row }) => <span className="num">{dateTime(row.original.addedDate)}</span>,
   },
 ];
-
-function addedStr(ts: number): string {
-  if (!ts) return '';
-  return new Date(ts * 1000).toLocaleString(undefined, {
-    year: '2-digit',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
 
 // our sort keys differ from a couple of column ids
 const colSortKey: Record<string, string> = { status_text: 'status' };

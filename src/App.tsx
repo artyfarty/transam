@@ -16,6 +16,7 @@ import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
 import { seriesKey, suggestDir } from './series';
 import { DEFAULT_LABEL_RULES, labelsForPath, type LabelRule } from './labelRules';
+import { setDateLocale } from './format';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
@@ -143,6 +144,15 @@ export function App() {
     return window.api.onOpenAdd((p) => {
       setAddPrefill(p);
       setShowAdd(true);
+    });
+  }, []);
+
+  // pick up the OS regional locale for date formatting
+  const [, setLocaleTick] = useState(0);
+  useEffect(() => {
+    window.api.getLocale().then((l) => {
+      setDateLocale(l);
+      setLocaleTick((x) => x + 1);
     });
   }, []);
 
