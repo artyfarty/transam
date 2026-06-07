@@ -154,6 +154,12 @@ function registerIpc(): void {
     return shell.openPath(local); // '' on success, else an error message
   });
 
+  // Reveal a file/folder in the OS file manager (selects it).
+  ipcMain.handle('shell:showItem', async (_e, daemonPath: string): Promise<void> => {
+    const cfg = loadConfig();
+    shell.showItemInFolder(cfg ? remoteToLocal(cfg, daemonPath) : daemonPath);
+  });
+
   // Native folder picker that maps the chosen local path to the daemon path.
   ipcMain.handle('dialog:pickFolder', async (): Promise<{ local: string; remote: string } | null> => {
     if (!win) return null;

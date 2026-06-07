@@ -17,6 +17,7 @@ declare global {
       add(opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult>;
       pickFolder(): Promise<{ local: string; remote: string } | null>;
       openPath(daemonPath: string): Promise<string>;
+      showItem(daemonPath: string): Promise<void>;
       onOpenAdd(cb: (p: OpenAddPayload) => void): () => void;
     };
   }

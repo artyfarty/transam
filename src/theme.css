@@ -309,6 +309,157 @@ body {
   width: 100%;
 }
 
+/* ---- general tab (redesigned) ---- */
+.general {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.g-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.g-head .status-ico {
+  width: auto;
+  flex: 0 0 auto;
+}
+.g-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+.bar.big {
+  height: 20px;
+  border-radius: 4px;
+  margin: 0;
+}
+.bar.big > span {
+  line-height: 20px;
+  font-size: 11px;
+}
+.piecebar {
+  width: 100%;
+  height: 16px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--bar-bg);
+}
+.piecebar canvas {
+  display: block;
+}
+.g-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 28px;
+}
+.g-sect h4 {
+  margin: 0 0 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.kv {
+  display: flex;
+  gap: 10px;
+  font-size: 12.5px;
+  padding: 2px 0;
+}
+.kv .k {
+  flex: 0 0 92px;
+  color: var(--text-dim);
+}
+.kv .v {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kv.wide .v {
+  white-space: normal;
+  word-break: break-all;
+  user-select: text;
+}
+.mono {
+  font: var(--mono);
+  user-select: text;
+}
+
+/* seeding limits */
+.g-sect.seeding {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+.seed-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0;
+  font-size: 12.5px;
+}
+.seed-row .k {
+  flex: 0 0 44px;
+  color: var(--text-dim);
+}
+.seed-row select,
+.seed-row input {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 3px 6px;
+  font: inherit;
+}
+.seed-row input[type='number'] {
+  width: 80px;
+}
+.seed-row .unit {
+  color: var(--text-dim);
+}
+.seed-actions {
+  margin-top: 6px;
+}
+.seed-actions .primary {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 14px;
+  cursor: pointer;
+  font: inherit;
+}
+
+/* ---- files table (fills the pane) ---- */
+.tab-content.files-pane {
+  padding: 0;
+  overflow: hidden;
+}
+.ftable {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.ftable select {
+  background: var(--bg-input);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 11px;
+}
+.ftable .bar {
+  height: 13px;
+}
+
 /* progress bar cell */
 .bar {
   height: 13px;

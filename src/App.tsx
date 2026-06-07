@@ -154,11 +154,23 @@ export function App() {
     }
   }
 
+  const ctxTarget = () => torrents.find((t) => t.id === ids[0]);
+  function openFolder() {
+    const t = ctxTarget();
+    if (t) void window.api.openPath(t.downloadDir);
+  }
+  function revealItem() {
+    const t = ctxTarget();
+    if (t) void window.api.showItem(`${t.downloadDir.replace(/\/+$/, '')}/${t.name}`);
+  }
+
   const menuItems: MenuItem[] = [
     { label: 'Start', onClick: () => act('start') },
     { label: 'Start now', onClick: () => act('start-now') },
     { label: 'Pause', onClick: () => act('stop') },
     { separator: true },
+    { label: 'Open folder', onClick: openFolder },
+    { label: 'Show in Explorer', onClick: revealItem },
     { label: 'Verify', onClick: () => act('verify') },
     { label: 'Reannounce', onClick: () => act('reannounce') },
     { label: 'Set location…', onClick: relocate },

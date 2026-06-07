@@ -127,12 +127,17 @@ export interface TorrentDetail {
   hashString: string;
   pieceCount: number;
   pieceSize: number;
+  pieces: string; // base64 bitfield of downloaded pieces
   dateCreated: number;
   downloadDir: string;
   files: TorrentFile[];
   fileStats: TorrentFileStat[];
   peers: TorrentPeer[];
   trackerStats: TrackerStat[];
+  seedRatioLimit: number;
+  seedRatioMode: number; // 0 = use global, 1 = stop at this ratio, 2 = seed forever
+  seedIdleLimit: number; // minutes
+  seedIdleMode: number; // 0 = global, 1 = stop after idle, 2 = unlimited
 }
 
 export const DETAIL_FIELDS = [
@@ -142,12 +147,17 @@ export const DETAIL_FIELDS = [
   'hashString',
   'pieceCount',
   'pieceSize',
+  'pieces',
   'dateCreated',
   'downloadDir',
   'files',
   'fileStats',
   'peers',
   'trackerStats',
+  'seedRatioLimit',
+  'seedRatioMode',
+  'seedIdleLimit',
+  'seedIdleMode',
 ] as const;
 
 export interface SpeedLimits {

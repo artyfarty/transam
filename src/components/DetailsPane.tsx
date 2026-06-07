@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Torrent, TorrentDetail } from '../../shared/types';
 import { humanSize, speed, percent, ratio, eta, statusText } from '../format';
+import { PieceBar } from './PieceBar';
+import { FilesTable } from './FilesTable';
+import { StatusIcon } from './icons';
 
 type Tab = 'general' | 'files' | 'peers' | 'trackers';
 
@@ -33,9 +36,10 @@ export function DetailsPane({ torrent, detail, onRefresh, height }: Props) {
           </div>
         ))}
       </div>
-      <div className="tab-content">
-        {tab === 'general' && <General t={torrent} d={detail} />}
-        {tab === 'files' && <Files t={torrent} d={detail} onRefresh={onRefresh} />}
+      <div className={`tab-content ${tab === 'files' ? 'files-pane' : ''}`}>
+        {tab === 'general' && <General t={torrent} d={detail} onRefresh={onRefresh} />}
+        {tab === 'files' &&
+          (detail ? <Files t={torrent} d={detail} onRefresh={onRefresh} /> : <div className="empty">Loading…</div>)}
         {tab === 'peers' && <Peers d={detail} />}
         {tab === 'trackers' && <Trackers d={detail} />}
       </div>
@@ -43,125 +47,157 @@ export function DetailsPane({ torrent, detail, onRefresh, height }: Props) {
   );
 }
 
-function General({ t, d }: { t: Torrent; d: TorrentDetail | null }) {
-  const added = t.addedDate ? new Date(t.addedDate * 1000).toLocaleString() : '—';
+function KV({ k, v, wide }: { k: string; v: React.ReactNode; wide?: boolean }) {
   return (
-    <div className="grid">
-      <span className="k">Status</span>
-      <span>{statusText(t)}</span>
-      <span className="k">Size</span>
-      <span>{humanSize(t.totalSize)}</span>
-
-      <span className="k">Progress</span>
-      <span>{percent(t.percentDone)}</span>
-      <span className="k">Remaining</span>
-      <span>{humanSize(t.leftUntilDone)}</span>
-
-      <span className="k">Download</span>
-      <span>{speed(t.rateDownload) || '—'}</span>
-      <span className="k">Upload</span>
-      <span>{speed(t.rateUpload) || '—'}</span>
-
-      <span className="k">Downloaded</span>
-      <span>{humanSize(t.downloadedEver)}</span>
-      <span className="k">Uploaded</span>
-      <span>{humanSize(t.uploadedEver)}</span>
-
-      <span className="k">Ratio</span>
-      <span>{ratio(t.uploadRatio)}</span>
-      <span className="k">ETA</span>
-      <span>{eta(t.eta) || '—'}</span>
-
-      <span className="k">Added</span>
-      <span>{added}</span>
-      <span className="k">Pieces</span>
-      <span>{d ? `${d.pieceCount} × ${humanSize(d.pieceSize)}` : '…'}</span>
-
-      <span className="k">Location</span>
-      <span style={{ gridColumn: 'span 3', userSelect: 'text' }}>{t.downloadDir}</span>
-
-      {d?.hashString && (
-        <>
-          <span className="k">Hash</span>
-          <span style={{ gridColumn: 'span 3', userSelect: 'text', font: 'var(--mono)' }}>{d.hashString}</span>
-        </>
-      )}
-      {d?.comment && (
-        <>
-          <span className="k">Comment</span>
-          <span style={{ gridColumn: 'span 3', userSelect: 'text' }}>{d.comment}</span>
-        </>
-      )}
-      {t.error ? (
-        <>
-          <span className="k">Error</span>
-          <span style={{ gridColumn: 'span 3', color: 'var(--error)', userSelect: 'text' }}>{t.errorString}</span>
-        </>
-      ) : null}
+    <div className={`kv ${wide ? 'wide' : ''}`}>
+      <span className="k">{k}</span>
+      <span className="v">{v}</span>
     </div>
   );
 }
 
-function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onRefresh: () => void }) {
-  if (!d) return <div className="empty">Loading…</div>;
-  if (d.files.length === 0) return <div className="empty">No files</div>;
+function General({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onRefresh: () => void }) {
+  const added = t.addedDate ? new Date(t.addedDate * 1000).toLocaleString() : '—';
+  const done = t.percentDone >= 1;
+  return (
+    <div className="general">
+      <div className="g-head">
+        <StatusIcon t={t} />
+        <div className="g-name" title={t.name}>
+          {t.name}
+        </div>
+      </div>
 
-  async function setWanted(idx: number, wanted: boolean) {
-    await window.api.set([t.id], wanted ? { 'files-wanted': [idx] } : { 'files-unwanted': [idx] });
+      <div className={`bar big ${done ? 'done' : t.status === 0 ? 'paused' : ''}`}>
+        <i style={{ width: `${Math.min(100, t.percentDone * 100)}%` }} />
+        <span>
+          {percent(t.percentDone)} · {statusText(t)}
+          {t.rateDownload > 0 ? ` · ↓ ${speed(t.rateDownload)}` : ''}
+          {t.rateUpload > 0 ? ` · ↑ ${speed(t.rateUpload)}` : ''}
+        </span>
+      </div>
+
+      {d?.pieces ? <PieceBar pieces={d.pieces} pieceCount={d.pieceCount} /> : null}
+
+      <div className="g-cols">
+        <section className="g-sect">
+          <h4>Transfer</h4>
+          <KV k="Downloaded" v={humanSize(t.downloadedEver)} />
+          <KV k="Uploaded" v={humanSize(t.uploadedEver)} />
+          <KV k="Ratio" v={ratio(t.uploadRatio)} />
+          <KV k="Remaining" v={done ? '—' : humanSize(t.leftUntilDone)} />
+          <KV k="ETA" v={eta(t.eta) || '—'} />
+          <KV k="Peers" v={`${t.peersSendingToUs} seeds / ${t.peersGettingFromUs} peers`} />
+        </section>
+        <section className="g-sect">
+          <h4>Info</h4>
+          <KV k="Size" v={humanSize(t.totalSize)} />
+          <KV k="Pieces" v={d ? `${d.pieceCount} × ${humanSize(d.pieceSize)}` : '…'} />
+          <KV k="Added" v={added} />
+          <KV k="Location" v={t.downloadDir} wide />
+          {d?.hashString ? <KV k="Hash" v={<span className="mono">{d.hashString}</span>} wide /> : null}
+        </section>
+      </div>
+
+      {d?.comment ? (
+        <section className="g-sect">
+          <KV k="Comment" v={d.comment} wide />
+        </section>
+      ) : null}
+      {t.error ? (
+        <section className="g-sect">
+          <KV k="Error" v={<span style={{ color: 'var(--error)' }}>{t.errorString}</span>} wide />
+        </section>
+      ) : null}
+
+      {d ? <SeedingControl t={t} d={d} onRefresh={onRefresh} /> : null}
+    </div>
+  );
+}
+
+function SeedingControl({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: () => void }) {
+  const [rMode, setRMode] = useState(d.seedRatioMode);
+  const [rLim, setRLim] = useState(String(d.seedRatioLimit));
+  const [iMode, setIMode] = useState(d.seedIdleMode);
+  const [iLim, setILim] = useState(String(d.seedIdleLimit));
+
+  useEffect(() => {
+    setRMode(d.seedRatioMode);
+    setRLim(String(d.seedRatioLimit));
+    setIMode(d.seedIdleMode);
+    setILim(String(d.seedIdleLimit));
+  }, [d.id, d.seedRatioMode, d.seedRatioLimit, d.seedIdleMode, d.seedIdleLimit]);
+
+  async function apply() {
+    await window.api.set([t.id], {
+      seedRatioMode: rMode,
+      seedRatioLimit: Math.max(0, parseFloat(rLim) || 0),
+      seedIdleMode: iMode,
+      seedIdleLimit: Math.max(0, parseInt(iLim, 10) || 0),
+    });
     onRefresh();
-  }
-  async function setPriority(idx: number, pr: number) {
-    const key = pr > 0 ? 'priority-high' : pr < 0 ? 'priority-low' : 'priority-normal';
-    await window.api.set([t.id], { [key]: [idx] });
-    onRefresh();
-  }
-  function openFile(name: string) {
-    const dir = (d?.downloadDir ?? '').replace(/\/+$/, '');
-    void window.api.openPath(`${dir}/${name}`);
   }
 
   return (
-    <table className="files">
-      <thead>
-        <tr>
-          <th style={{ width: 24 }}></th>
-          <th>Name</th>
-          <th style={{ width: 80 }}>Size</th>
-          <th style={{ width: 60 }}>Done</th>
-          <th style={{ width: 80 }}>Priority</th>
-        </tr>
-      </thead>
-      <tbody>
-        {d.files.map((f, i) => {
-          const st = d.fileStats[i];
-          const done = f.length ? f.bytesCompleted / f.length : 0;
-          return (
-            <tr key={i} onDoubleClick={() => openFile(f.name)} title="Double-click to open">
-              <td>
-                <input type="checkbox" checked={st?.wanted ?? true} onChange={(e) => setWanted(i, e.target.checked)} />
-              </td>
-              <td className="ellip" title={f.name}>
-                {f.name}
-              </td>
-              <td className="num">{humanSize(f.length)}</td>
-              <td className="num">{percent(done)}</td>
-              <td>
-                <select
-                  value={st?.priority ?? 0}
-                  onChange={(e) => setPriority(i, Number(e.target.value))}
-                  disabled={!(st?.wanted ?? true)}
-                >
-                  <option value={1}>High</option>
-                  <option value={0}>Normal</option>
-                  <option value={-1}>Low</option>
-                </select>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
+    <section className="g-sect seeding">
+      <h4>Seeding limits</h4>
+      <div className="seed-row">
+        <span className="k">Ratio</span>
+        <select value={rMode} onChange={(e) => setRMode(Number(e.target.value))}>
+          <option value={0}>Use global</option>
+          <option value={1}>Stop at ratio</option>
+          <option value={2}>Seed forever</option>
+        </select>
+        <input
+          type="number"
+          min={0}
+          step={0.1}
+          value={rLim}
+          disabled={rMode !== 1}
+          onChange={(e) => setRLim(e.target.value)}
+        />
+      </div>
+      <div className="seed-row">
+        <span className="k">Idle</span>
+        <select value={iMode} onChange={(e) => setIMode(Number(e.target.value))}>
+          <option value={0}>Use global</option>
+          <option value={1}>Stop when idle</option>
+          <option value={2}>Unlimited</option>
+        </select>
+        <input
+          type="number"
+          min={0}
+          value={iLim}
+          disabled={iMode !== 1}
+          onChange={(e) => setILim(e.target.value)}
+        />
+        <span className="unit">min</span>
+      </div>
+      <div className="seed-actions">
+        <button className="primary" onClick={apply}>
+          Apply
+        </button>
+      </div>
+    </section>
   );
+}
+
+function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: () => void }) {
+  if (d.files.length === 0) return <div className="empty">No files</div>;
+  const setWanted = async (idx: number, wanted: boolean) => {
+    await window.api.set([t.id], wanted ? { 'files-wanted': [idx] } : { 'files-unwanted': [idx] });
+    onRefresh();
+  };
+  const setPriority = async (idx: number, pr: number) => {
+    const key = pr > 0 ? 'priority-high' : pr < 0 ? 'priority-low' : 'priority-normal';
+    await window.api.set([t.id], { [key]: [idx] });
+    onRefresh();
+  };
+  const openFile = (name: string) => {
+    const dir = (d.downloadDir ?? '').replace(/\/+$/, '');
+    void window.api.openPath(`${dir}/${name}`);
+  };
+  return <FilesTable detail={d} onSetWanted={setWanted} onSetPriority={setPriority} onOpen={openFile} />;
 }
 
 function Peers({ d }: { d: TorrentDetail | null }) {
