@@ -128,6 +128,7 @@ export function App() {
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
+  const [globalRatio, setGlobalRatio] = useState<{ enabled: boolean; limit: number }>({ enabled: false, limit: 0 });
   const [showConnect, setShowConnect] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
@@ -178,6 +179,8 @@ export function App() {
         'speed-limit-down-enabled',
         'speed-limit-up',
         'speed-limit-up-enabled',
+        'seedRatioLimit',
+        'seedRatioLimited',
       ]),
     ]);
     if (tr.ok && tr.arguments) {
@@ -201,6 +204,7 @@ export function App() {
         upEnabled: !!a['speed-limit-up-enabled'],
         upKbps: Number(a['speed-limit-up'] ?? 0),
       });
+      setGlobalRatio({ enabled: !!a['seedRatioLimited'], limit: Number(a['seedRatioLimit'] ?? 0) });
     }
   }, []);
 
@@ -472,6 +476,7 @@ export function App() {
             onSort={onSort}
             busy={busy}
             scrollToId={ids.length === 1 ? ids[0] : undefined}
+            globalRatio={globalRatio}
             onContext={(x, y) => setMenu({ x, y })}
           />
           <Splitter

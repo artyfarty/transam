@@ -71,7 +71,26 @@ const columns: ColumnDef<Torrent>[] = [
   { id: 'down', header: 'Down', size: 86, cell: ({ row }) => <span className="num">{speed(row.original.rateDownload)}</span> },
   { id: 'up', header: 'Up', size: 86, cell: ({ row }) => <span className="num">{speed(row.original.rateUpload)}</span> },
   { id: 'eta', header: 'ETA', size: 74, cell: ({ row }) => <span className="num">{eta(row.original.eta)}</span> },
-  { id: 'ratio', header: 'Ratio', size: 58, cell: ({ row }) => <span className="num">{ratio(row.original.uploadRatio)}</span> },
+  {
+    id: 'ratio',
+    header: 'Ratio',
+    size: 64,
+    cell: ({ row, table }) => {
+      const t = row.original;
+      const g = (table.options.meta as TableMeta).globalRatio;
+      const limit = t.seedRatioMode === 1 ? t.seedRatioLimit : t.seedRatioMode === 0 && g.enabled ? g.limit : 0;
+      if (limit > 0) {
+        const pct = Math.min(100, (t.uploadRatio / limit) * 100);
+        return (
+          <div className={`bar ${t.uploadRatio >= limit ? 'done' : ''}`} title={`${ratio(t.uploadRatio)} / ${limit}`}>
+            <i style={{ width: `${pct}%` }} />
+            <span>{ratio(t.uploadRatio)}</span>
+          </div>
+        );
+      }
+      return <span className="num">{ratio(t.uploadRatio)}</span>;
+    },
+  },
   {
     id: 'added',
     header: 'Added',
@@ -91,10 +110,15 @@ interface Props {
   onSort: (key: string) => void;
   busy: Set<number>;
   scrollToId?: number;
+  globalRatio: { enabled: boolean; limit: number };
   onContext: (x: number, y: number) => void;
 }
 
-export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, scrollToId, onContext }: Props) {
+interface TableMeta {
+  globalRatio: { enabled: boolean; limit: number };
+}
+
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, scrollToId, globalRatio, onContext }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
@@ -115,6 +139,7 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
     enableColumnResizing: true,
     getCoreRowModel: getCoreRowModel(),
     defaultColumn: { minSize: 44 },
+    meta: { globalRatio } satisfies TableMeta,
   });
 
   const rows = table.getRowModel().rows;

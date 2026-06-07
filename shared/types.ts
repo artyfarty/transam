@@ -61,6 +61,8 @@ export interface Torrent {
   downloadedEver: number;
   uploadedEver: number;
   queuePosition: number;
+  seedRatioMode: number; // 0 global, 1 stop at ratio, 2 unlimited
+  seedRatioLimit: number;
 }
 
 /** Fields we request from torrent-get, kept in one place. */
@@ -90,6 +92,8 @@ export const TORRENT_FIELDS = [
   'downloadedEver',
   'uploadedEver',
   'queuePosition',
+  'seedRatioMode',
+  'seedRatioLimit',
 ] as const;
 
 // --- per-torrent detail (fetched only for the selected torrent) ------------
