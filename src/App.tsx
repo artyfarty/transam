@@ -142,7 +142,11 @@ export function App() {
     let alive = true;
     let handle: ReturnType<typeof setTimeout>;
     const loop = async () => {
-      await poll();
+      try {
+        await poll();
+      } catch {
+        setConnected(false);
+      }
       if (alive) handle = setTimeout(loop, POLL_MS);
     };
     (async () => {
@@ -310,7 +314,11 @@ export function App() {
     let alive = true;
     let handle: ReturnType<typeof setTimeout>;
     const loop = async () => {
-      await fetchDetail();
+      try {
+        await fetchDetail();
+      } catch {
+        /* keep last detail; try again next tick */
+      }
       if (alive) handle = setTimeout(loop, POLL_MS);
     };
     loop();

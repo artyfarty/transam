@@ -62,7 +62,12 @@ export class TransmissionClient {
       if (res.status === 401) return { ok: false, result: 'authentication failed' };
       if (!res.ok) return { ok: false, result: `HTTP ${res.status}` };
 
-      const json = (await res.json()) as { result: string; arguments?: T };
+      let json: { result: string; arguments?: T };
+      try {
+        json = (await res.json()) as { result: string; arguments?: T };
+      } catch {
+        return { ok: false, result: 'invalid response from server' };
+      }
       return { ok: json.result === 'success', result: json.result, arguments: json.arguments };
     }
     return { ok: false, result: 'unreachable' };
