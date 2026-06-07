@@ -36,6 +36,7 @@
     "directories": {
       "output": "release"
     },
+    "asar": false,
     "files": [
       "dist/**/*",
       "dist-electron/**/*"
