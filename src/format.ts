@@ -66,3 +66,21 @@ export function statusText(t: Torrent): string {
 export function isActive(t: Torrent): boolean {
   return t.status === TorrentStatus.Download || t.status === TorrentStatus.Seed;
 }
+
+const LABEL_PALETTE = [
+  '#4b8ed6',
+  '#4cae73',
+  '#d6914b',
+  '#a06cd6',
+  '#d65b8e',
+  '#4bb0c0',
+  '#b9a13e',
+  '#d6634b',
+];
+
+/** Stable per-label colour from the palette. */
+export function labelColor(label: string): string {
+  let h = 0;
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
+  return LABEL_PALETTE[h % LABEL_PALETTE.length];
+}

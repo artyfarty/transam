@@ -1,14 +1,18 @@
 import { useState } from 'react';
+import type { LabelRule } from '../labelRules';
 
 type Theme = 'dark' | 'light';
 
 interface Props {
   theme: Theme;
   onTheme: (t: Theme) => void;
+  labelRules: LabelRule[];
+  onLabelRules: (rules: LabelRule[]) => void;
+  onRunLabelRules: () => void;
   onClose: () => void;
 }
 
-export function PreferencesModal({ theme, onTheme, onClose }: Props) {
+export function PreferencesModal({ theme, onTheme, labelRules, onLabelRules, onRunLabelRules, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -23,9 +27,12 @@ export function PreferencesModal({ theme, onTheme, onClose }: Props) {
     setBusy(false);
   }
 
+  const update = (i: number, patch: Partial<LabelRule>) =>
+    onLabelRules(labelRules.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+
   return (
     <div className="modal-back" onMouseDown={onClose}>
-      <div className="modal" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="modal prefs" onMouseDown={(e) => e.stopPropagation()}>
         <h2>Client Preferences</h2>
 
         <div className="field">
@@ -34,6 +41,32 @@ export function PreferencesModal({ theme, onTheme, onClose }: Props) {
             <option value="dark">Dark</option>
             <option value="light">Light</option>
           </select>
+        </div>
+
+        <div className="field">
+          <label>Label rules — path wildcard → label (auto-applied to new torrents)</label>
+          {labelRules.map((r, i) => (
+            <div className="rule-row" key={i}>
+              <input
+                placeholder="*/Movies/*"
+                value={r.pattern}
+                onChange={(e) => update(i, { pattern: e.target.value })}
+              />
+              <span className="arrow">→</span>
+              <input className="rule-label" placeholder="Movie" value={r.label} onChange={(e) => update(i, { label: e.target.value })} />
+              <button className="del" title="Remove" onClick={() => onLabelRules(labelRules.filter((_, j) => j !== i))}>
+                ✕
+              </button>
+            </div>
+          ))}
+          <div className="rule-actions">
+            <button className="add-map" onClick={() => onLabelRules([...labelRules, { pattern: '', label: '' }])}>
+              + Add rule
+            </button>
+            <button className="assoc-btn" onClick={onRunLabelRules}>
+              Apply to existing torrents
+            </button>
+          </div>
         </div>
 
         <div className="field">

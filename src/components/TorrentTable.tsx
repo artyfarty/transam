@@ -10,7 +10,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Torrent } from '../../shared/types';
 import { TorrentStatus } from '../../shared/types';
-import { humanSize, speed, percent, ratio, eta, statusText } from '../format';
+import { humanSize, speed, percent, ratio, eta, statusText, labelColor } from '../format';
 import { StatusIcon } from './icons';
 import { loadJSON, saveJSON } from '../persist';
 import type { SortState } from '../sort';
@@ -35,12 +35,12 @@ const columns: ColumnDef<Torrent>[] = [
     enableHiding: false,
     cell: ({ row }) => (
       <>
+        <span className="ellip">{row.original.name}</span>
         {row.original.labels?.map((l) => (
-          <span key={l} className="tag-chip" title={l}>
+          <span key={l} className="tag-chip" title={l} style={{ background: labelColor(l) }}>
             {l}
           </span>
         ))}
-        <span className="ellip">{row.original.name}</span>
       </>
     ),
   },

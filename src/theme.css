@@ -401,14 +401,12 @@ body {
 }
 .tag-chip {
   flex: 0 0 auto;
-  background: var(--accent-dim);
-  color: var(--text);
-  border: 1px solid var(--border);
+  color: #fff;
   border-radius: 3px;
   padding: 0 5px;
-  margin-right: 5px;
+  margin-left: 5px;
   font-size: 9.5px;
-  line-height: 13px;
+  line-height: 14px;
   text-transform: uppercase;
   letter-spacing: 0.3px;
   max-width: 110px;
@@ -1038,6 +1036,47 @@ table.files select {
   color: var(--text-dim);
   white-space: pre-wrap;
   user-select: text;
+}
+.modal.prefs {
+  width: 500px;
+}
+.rule-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.rule-row input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 6px;
+  font: inherit;
+}
+.rule-row .rule-label {
+  flex: 0 0 120px;
+}
+.rule-row .arrow {
+  color: var(--text-dim);
+}
+.rule-row .del {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  cursor: pointer;
+  padding: 3px 7px;
+}
+.rule-row .del:hover {
+  color: var(--error);
+}
+.rule-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 /* add wizard */

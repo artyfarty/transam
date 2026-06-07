@@ -15,6 +15,7 @@ import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
 import { seriesKey, suggestDir } from './series';
+import { DEFAULT_LABEL_RULES, labelsForPath, type LabelRule } from './labelRules';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
@@ -99,6 +100,30 @@ export function App() {
     const distinct = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([d]) => d);
     return [...new Set([...recentDirs, ...distinct])];
   }, [torrents, recentDirs]);
+
+  // path → label rules (auto-applied to new torrents; run-on-all from settings)
+  const [labelRules, setLabelRules] = useState<LabelRule[]>(() => loadJSON('labelRules', DEFAULT_LABEL_RULES));
+  useEffect(() => saveJSON('labelRules', labelRules), [labelRules]);
+  const seenIds = useRef<Set<number> | null>(null);
+  // auto-apply rules to torrents that appear after launch (baseline the first
+  // batch so existing torrents aren't mass-relabelled without asking)
+  useEffect(() => {
+    if (!torrents.length) return;
+    if (seenIds.current === null) {
+      seenIds.current = new Set(torrents.map((t) => t.id));
+      return;
+    }
+    const fresh = torrents.filter((t) => !seenIds.current!.has(t.id));
+    fresh.forEach((t) => seenIds.current!.add(t.id));
+    if (!labelRules.length || !fresh.length) return;
+    void (async () => {
+      for (const t of fresh) {
+        const missing = labelsForPath(t.downloadDir, labelRules).filter((l) => !(t.labels ?? []).includes(l));
+        if (missing.length) await window.api.set([t.id], { labels: [...(t.labels ?? []), ...missing] });
+      }
+    })();
+  }, [torrents, labelRules]);
+
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
@@ -283,6 +308,19 @@ export function App() {
 
   const [labelsEdit, setLabelsEdit] = useState<{ ids: number[]; initial: string } | null>(null);
 
+  async function runLabelRules() {
+    let n = 0;
+    for (const t of torrents) {
+      const missing = labelsForPath(t.downloadDir, labelRules).filter((l) => !(t.labels ?? []).includes(l));
+      if (missing.length) {
+        await window.api.set([t.id], { labels: [...(t.labels ?? []), ...missing] });
+        n++;
+      }
+    }
+    setToast(`Applied labels to ${n} torrent(s)`);
+    poll();
+  }
+
   const ctxTarget = () => torrents.find((t) => t.id === ids[0]);
   function editLabels() {
     if (!ids.length) return;
@@ -445,7 +483,16 @@ export function App() {
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
-      {showPrefs && <PreferencesModal theme={theme} onTheme={setTheme} onClose={() => setShowPrefs(false)} />}
+      {showPrefs && (
+        <PreferencesModal
+          theme={theme}
+          onTheme={setTheme}
+          labelRules={labelRules}
+          onLabelRules={setLabelRules}
+          onRunLabelRules={runLabelRules}
+          onClose={() => setShowPrefs(false)}
+        />
+      )}
       {labelsEdit && (
         <LabelsDialog
           initial={labelsEdit.initial}
