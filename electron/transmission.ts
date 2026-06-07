@@ -7,6 +7,7 @@ const SESSION_HEADER = 'x-transmission-session-id';
 
 export class TransmissionClient {
   private sessionId = '';
+  private timeoutMs = 20000;
 
   constructor(private cfg: ServerConfig) {}
 
@@ -37,9 +38,16 @@ export class TransmissionClient {
     for (let attempt = 0; attempt < 2; attempt++) {
       let res: Response;
       try {
-        res = await fetch(this.url(), { method: 'POST', headers: this.headers(), body });
+        res = await fetch(this.url(), {
+          method: 'POST',
+          headers: this.headers(),
+          body,
+          signal: AbortSignal.timeout(this.timeoutMs),
+        });
       } catch (e) {
-        return { ok: false, result: `network error: ${(e as Error).message}` };
+        const err = e as Error;
+        if (err.name === 'TimeoutError') return { ok: false, result: 'request timed out' };
+        return { ok: false, result: `network error: ${err.message}` };
       }
 
       if (res.status === 409) {

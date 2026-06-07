@@ -66,10 +66,11 @@ interface Props {
   onSelect: (sel: Set<number>) => void;
   sort: SortState;
   onSort: (key: string) => void;
+  busy: Set<number>;
   onContext: (x: number, y: number) => void;
 }
 
-export function TorrentTable({ torrents, selected, onSelect, sort, onSort, onContext }: Props) {
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, onContext }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
@@ -168,7 +169,7 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, onCon
             return (
               <div
                 key={t.id}
-                className={`row ${vi.index % 2 ? 'odd' : 'even'} ${sel ? 'sel' : ''}`}
+                className={`row ${vi.index % 2 ? 'odd' : 'even'} ${sel ? 'sel' : ''} ${busy.has(t.id) ? 'busy' : ''}`}
                 style={{ position: 'absolute', top: vi.start, height: ROW_H, width: totalWidth }}
                 onMouseDown={(e) => clickRow(e, t, vi.index)}
                 onContextMenu={(e) => contextRow(e, t, vi.index)}

@@ -73,7 +73,6 @@ export function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
-  const timer = useRef<ReturnType<typeof setInterval>>();
 
   // OS opened a magnet link or .torrent file with us → open the Add dialog.
   useEffect(() => {
@@ -135,10 +134,17 @@ export function App() {
     poll();
   }
 
-  // (re)connect + polling whenever we have a config
+  // (re)connect + polling whenever we have a config.
+  // Self-scheduling loop: the next poll is queued only after the current one
+  // settles, so a slow/hung server can't pile up overlapping requests.
   useEffect(() => {
     if (!config) return;
     let alive = true;
+    let handle: ReturnType<typeof setTimeout>;
+    const loop = async () => {
+      await poll();
+      if (alive) handle = setTimeout(loop, POLL_MS);
+    };
     (async () => {
       const r = await window.api.test();
       if (!alive) return;
@@ -146,12 +152,11 @@ export function App() {
         setServerVersion((r.arguments as { version?: string }).version);
         setConnected(true);
       }
-      poll();
-      timer.current = setInterval(poll, POLL_MS);
+      loop();
     })();
     return () => {
       alive = false;
-      if (timer.current) clearInterval(timer.current);
+      clearTimeout(handle);
     };
   }, [config, poll]);
 
@@ -171,20 +176,50 @@ export function App() {
 
   const [menu, setMenu] = useState<{ x: number; y: number } | null>(null);
 
+  // ids with an in-flight action → row shows a shimmer until it settles
+  const [busy, setBusy] = useState<Set<number>>(new Set());
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const h = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(h);
+  }, [toast]);
+
+  const markBusy = (targets: number[]) => setBusy((p) => new Set([...p, ...targets]));
+  const clearBusy = (targets: number[]) =>
+    setBusy((p) => {
+      const n = new Set(p);
+      targets.forEach((i) => n.delete(i));
+      return n;
+    });
+
   async function act(action: string) {
     if (!ids.length) return;
     if (action === 'remove' && !confirm(`Remove ${ids.length} torrent(s)? (data kept on disk)`)) return;
     if (action === 'remove-data' && !confirm(`Remove ${ids.length} torrent(s) AND delete data from disk?`)) return;
-    await window.api.action(action, ids);
-    poll();
+    const targets = ids;
+    markBusy(targets);
+    try {
+      const r = await window.api.action(action, targets);
+      if (!r.ok) setToast(r.result);
+      await poll();
+    } finally {
+      clearBusy(targets);
+    }
   }
 
   async function relocate() {
     if (!ids.length) return;
     const r = await window.api.pickFolder();
-    if (r) {
-      await window.api.setLocation(ids, r.remote, true);
-      poll();
+    if (!r) return;
+    const targets = ids;
+    markBusy(targets);
+    try {
+      const res = await window.api.setLocation(targets, r.remote, true);
+      if (!res.ok) setToast(res.result);
+      await poll();
+    } finally {
+      clearBusy(targets);
     }
   }
 
@@ -293,6 +328,7 @@ export function App() {
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
+      {config && !connected && <div className="banner">Disconnected — retrying…</div>}
       <div className="body">
         {sidebarOpen && (
           <>
@@ -307,6 +343,7 @@ export function App() {
             onSelect={setSelected}
             sort={sort}
             onSort={onSort}
+            busy={busy}
             onContext={(x, y) => setMenu({ x, y })}
           />
           <Splitter
@@ -333,6 +370,7 @@ export function App() {
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
       {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
+      {toast && <div className="toast">{toast}</div>}
 
       {showConnect && (
         <ConnectDialog
