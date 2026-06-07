@@ -8,11 +8,22 @@ export function seriesKey(name: string): string {
   let s = name.toLowerCase().trim();
   s = s.replace(/\.torrent$/, '');
   s = s.replace(EXT, '');
+  // Drop bracketed/parenthesized groups: release group + per-file CRC like
+  // "[SubsPlease]" / "[EC8F1EBF]", and "(1080p)" / "(2023)" noise. The CRC is
+  // unique per episode, so leaving it in would break the series key entirely.
+  s = s.replace(/\[[^\]]*\]/g, ' ');
+  s = s.replace(/\([^)]*\)/g, ' ');
   s = s.replace(/\bs\d{1,2}\s*[ex]\d{1,3}\b/g, '#'); // S01E05 / 1x05-ish
   s = s.replace(/\b(e|ep|episode|part|pt|vol|volume|disc|cd|chapter|ch)\s*\.?\s*\d{1,4}\b/g, '#');
   s = s.replace(/\b\d{3,4}p\b/g, ''); // 1080p/720p resolution noise
-  s = s.replace(/\b\d{1,4}\b/g, '#'); // any remaining standalone number
-  s = s.replace(/[._\-\s()[\]{}]+/g, ' ').trim();
+  // common scene/quality/source tags, so episodes that differ only in these
+  // (e.g. 1080p WEB-DL vs 720p) still share a key
+  s = s.replace(
+    /\b(web[\s._-]?dl|web[\s._-]?rip|web|blu[\s._-]?ray|bd[\s._-]?rip|br[\s._-]?rip|bd[\s._-]?remux|remux|hdtv|dvd[\s._-]?rip|hd[\s._-]?rip|x264|x265|h264|h265|hevc|avc|xvid|divx|aac|ac3|eac3|ddp|dts|truehd|flac|opus|10bit|8bit|hdr|sdr|dolby|atmos|repack|proper|internal|extended|remastered|multi|dual[\s._-]?audio|hardsub|softsub|uncensored|bdrip)\b/g,
+    ' ',
+  );
+  s = s.replace(/\b\d{1,4}\b/g, '#'); // any remaining standalone number (episode #)
+  s = s.replace(/[._\-\s]+/g, ' ').trim();
   return s;
 }
 
