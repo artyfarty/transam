@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload } from '../shared/types';
+import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload, SpeedLimits } from '../shared/types';
 import { Toolbar } from './components/Toolbar';
 import { TorrentTable } from './components/TorrentTable';
 import { DetailsPane } from './components/DetailsPane';
@@ -28,11 +28,14 @@ export function App() {
   useEffect(() => saveJSON('sort', sort), [sort]);
   const [sidebarW, setSidebarW] = useState<number>(() => loadJSON('sidebarW', 168));
   const [detailsH, setDetailsH] = useState<number>(() => loadJSON('detailsH', 200));
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => loadJSON('sidebarOpen', true));
   useEffect(() => saveJSON('sidebarW', sidebarW), [sidebarW]);
   useEffect(() => saveJSON('detailsH', detailsH), [detailsH]);
+  useEffect(() => saveJSON('sidebarOpen', sidebarOpen), [sidebarOpen]);
   const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
+  const [limits, setLimits] = useState<SpeedLimits | null>(null);
   const [showConnect, setShowConnect] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
@@ -55,7 +58,16 @@ export function App() {
   }, []);
 
   const poll = useCallback(async () => {
-    const [tr, st] = await Promise.all([window.api.getTorrents(), window.api.sessionStats()]);
+    const [tr, st, sg] = await Promise.all([
+      window.api.getTorrents(),
+      window.api.sessionStats(),
+      window.api.sessionGet([
+        'speed-limit-down',
+        'speed-limit-down-enabled',
+        'speed-limit-up',
+        'speed-limit-up-enabled',
+      ]),
+    ]);
     if (tr.ok && tr.arguments) {
       const list = (tr.arguments as { torrents: Torrent[] }).torrents ?? [];
       list.sort((a, b) => a.queuePosition - b.queuePosition || a.addedDate - b.addedDate);
@@ -69,7 +81,25 @@ export function App() {
       setDown(s.downloadSpeed ?? 0);
       setUp(s.uploadSpeed ?? 0);
     }
+    if (sg.ok && sg.arguments) {
+      const a = sg.arguments as Record<string, unknown>;
+      setLimits({
+        downEnabled: !!a['speed-limit-down-enabled'],
+        downKbps: Number(a['speed-limit-down'] ?? 0),
+        upEnabled: !!a['speed-limit-up-enabled'],
+        upKbps: Number(a['speed-limit-up'] ?? 0),
+      });
+    }
   }, []);
+
+  async function setLimit(dir: 'down' | 'up', enabled: boolean, kbps: number) {
+    const args =
+      dir === 'down'
+        ? { 'speed-limit-down-enabled': enabled, 'speed-limit-down': kbps }
+        : { 'speed-limit-up-enabled': enabled, 'speed-limit-up': kbps };
+    await window.api.sessionSet(args);
+    poll();
+  }
 
   // (re)connect + polling whenever we have a config
   useEffect(() => {
@@ -201,10 +231,16 @@ export function App() {
         onPause={() => act('stop')}
         onRemove={() => act('remove')}
         onSettings={() => setShowConnect(true)}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
       <div className="body">
-        <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} width={sidebarW} />
-        <Splitter orientation="v" onDrag={(d) => setSidebarW((w) => clamp(w + d, 120, 420))} />
+        {sidebarOpen && (
+          <>
+            <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} width={sidebarW} />
+            <Splitter orientation="v" onDrag={(d) => setSidebarW((w) => clamp(w + d, 120, 420))} />
+          </>
+        )}
         <div className="main">
           <TorrentTable
             torrents={filtered}
@@ -223,7 +259,15 @@ export function App() {
           />
         </div>
       </div>
-      <StatusBar connected={connected} serverVersion={serverVersion} count={torrents.length} downSpeed={down} upSpeed={up} />
+      <StatusBar
+        connected={connected}
+        serverVersion={serverVersion}
+        count={torrents.length}
+        downSpeed={down}
+        upSpeed={up}
+        limits={limits}
+        onSetLimit={setLimit}
+      />
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
 

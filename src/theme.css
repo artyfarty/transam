@@ -82,6 +82,11 @@ body {
   background: #2c3038;
   border-color: var(--border);
 }
+.toolbar button.active {
+  color: var(--accent);
+  background: #2c3038;
+  border-color: var(--border);
+}
 .toolbar button:disabled {
   color: var(--text-dim);
   cursor: default;
@@ -450,6 +455,74 @@ table.files select {
 }
 .statusbar .dot.on {
   background: var(--bar-fill-done);
+}
+
+/* speed controls with limit popover */
+.speed-ctl {
+  position: relative;
+  display: inline-flex;
+}
+.speed-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.speed-trigger:hover {
+  background: #ffffff12;
+  color: var(--text);
+}
+.limit-badge {
+  color: var(--accent);
+  font-size: 10px;
+}
+.popover-back {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+}
+.popover {
+  position: absolute;
+  bottom: 140%;
+  right: 0;
+  z-index: 21;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  min-width: 168px;
+  box-shadow: 0 6px 24px #0008;
+  color: var(--text);
+}
+.pop-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.popover .kb {
+  width: 84px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 4px 6px;
+  font: inherit;
+}
+.pop-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+.pop-actions .primary {
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  color: var(--text);
+  border-radius: 4px;
+  padding: 4px 12px;
+  cursor: pointer;
+  font: inherit;
 }
 
 /* ---- context menu ---- */

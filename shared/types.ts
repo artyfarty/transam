@@ -150,6 +150,13 @@ export const DETAIL_FIELDS = [
   'trackerStats',
 ] as const;
 
+export interface SpeedLimits {
+  downEnabled: boolean;
+  downKbps: number;
+  upEnabled: boolean;
+  upKbps: number;
+}
+
 export interface SessionStats {
   downloadSpeed: number;
   uploadSpeed: number;

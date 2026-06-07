@@ -49,6 +49,12 @@ export const IconSearch = ({ size = 13 }: SvgProps) => (
     <path d="M10 10l3 3" />
   </svg>
 );
+export const IconSidebar = ({ size = 14 }: SvgProps) => (
+  <svg {...base(size)}>
+    <rect x="2" y="3" width="12" height="10" rx="1" />
+    <path d="M6 3v10" />
+  </svg>
+);
 
 // --- per-torrent status glyph + color --------------------------------------
 function StatusGlyph({ status, error }: { status: TorrentStatus; error: number }) {

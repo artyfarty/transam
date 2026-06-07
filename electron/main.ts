@@ -88,6 +88,14 @@ function registerIpc(): void {
     return ensureClient().call('session-stats');
   });
 
+  ipcMain.handle('session:get', async (_e, fields?: string[]): Promise<RpcResult> => {
+    return ensureClient().call('session-get', fields ? { fields } : {});
+  });
+
+  ipcMain.handle('session:set', async (_e, args: Record<string, unknown>): Promise<RpcResult> => {
+    return ensureClient().call('session-set', args);
+  });
+
   ipcMain.handle('torrents:detail', async (_e, id: number): Promise<RpcResult> => {
     return ensureClient().call('torrent-get', { ids: [id], fields: DETAIL_FIELDS });
   });

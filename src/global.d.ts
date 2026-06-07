@@ -8,6 +8,8 @@ declare global {
       test(): Promise<RpcResult>;
       getTorrents(ids?: number[]): Promise<RpcResult>;
       sessionStats(): Promise<RpcResult>;
+      sessionGet(fields?: string[]): Promise<RpcResult>;
+      sessionSet(args: Record<string, unknown>): Promise<RpcResult>;
       detail(id: number): Promise<RpcResult>;
       set(ids: number[], args: Record<string, unknown>): Promise<RpcResult>;
       setLocation(ids: number[], location: string, move: boolean): Promise<RpcResult>;
