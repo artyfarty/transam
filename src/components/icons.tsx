@@ -56,34 +56,51 @@ export const IconSidebar = ({ size = 14 }: SvgProps) => (
   </svg>
 );
 
-// --- per-torrent status glyph + color --------------------------------------
+// --- per-torrent status: white glyph on a coloured rounded badge -----------
+function statusColor(status: TorrentStatus, error: number): string {
+  if (error) return 'var(--st-error)';
+  switch (status) {
+    case TorrentStatus.Download:
+      return 'var(--st-down)';
+    case TorrentStatus.Seed:
+      return 'var(--st-seed)';
+    case TorrentStatus.Stopped:
+      return 'var(--st-paused)';
+    case TorrentStatus.Check:
+    case TorrentStatus.CheckWait:
+      return 'var(--st-check)';
+    default:
+      return 'var(--st-queued)';
+  }
+}
+
 function StatusGlyph({ status, error }: { status: TorrentStatus; error: number }) {
-  if (error) {
+  // white glyph (inherits currentColor = #fff from the badge)
+  if (error)
     return (
-      <svg {...base(13)} style={{ color: 'var(--st-error)' }}>
+      <svg {...base(13)}>
         <path d="M8 2.5 14.5 13.5H1.5z" />
         <path d="M8 6.5v3M8 11.4v.1" />
       </svg>
     );
-  }
   switch (status) {
     case TorrentStatus.Download:
       return (
-        <svg {...base(13)} style={{ color: 'var(--st-down)' }} fill="currentColor" stroke="none">
-          <path d="M8 2.5v6.4M5 6l3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.8" />
-          <path d="M3.5 12.5h9" stroke="currentColor" strokeWidth="1.8" />
+        <svg {...base(13)} strokeWidth={1.8}>
+          <path d="M8 2.5v6.4M5 6l3 3 3-3" />
+          <path d="M3.5 12.5h9" />
         </svg>
       );
     case TorrentStatus.Seed:
       return (
-        <svg {...base(13)} style={{ color: 'var(--st-seed)' }} fill="none">
-          <path d="M8 13.5V7.1M5 9.5l3-3 3 3" strokeWidth="1.8" />
-          <path d="M3.5 3.5h9" strokeWidth="1.8" />
+        <svg {...base(13)} strokeWidth={1.8}>
+          <path d="M8 13.5V7.1M5 9.5l3-3 3 3" />
+          <path d="M3.5 3.5h9" />
         </svg>
       );
     case TorrentStatus.Stopped:
       return (
-        <svg {...base(13)} style={{ color: 'var(--st-paused)' }} fill="currentColor" stroke="none">
+        <svg {...base(13)} fill="currentColor" stroke="none">
           <rect x="4.5" y="3.5" width="2.3" height="9" rx="0.5" />
           <rect x="9.2" y="3.5" width="2.3" height="9" rx="0.5" />
         </svg>
@@ -91,14 +108,14 @@ function StatusGlyph({ status, error }: { status: TorrentStatus; error: number }
     case TorrentStatus.Check:
     case TorrentStatus.CheckWait:
       return (
-        <svg {...base(13)} style={{ color: 'var(--st-check)' }}>
+        <svg {...base(13)}>
           <path d="M13 8a5 5 0 1 1-1.5-3.6" />
           <path d="M13 2.5V5h-2.5" />
         </svg>
       );
     default: // queued (DownloadWait / SeedWait)
       return (
-        <svg {...base(13)} style={{ color: 'var(--st-queued)' }}>
+        <svg {...base(13)}>
           <circle cx="8" cy="8" r="5.2" />
           <path d="M8 5v3l2 1.4" />
         </svg>
@@ -109,7 +126,9 @@ function StatusGlyph({ status, error }: { status: TorrentStatus; error: number }
 export function StatusIcon({ t }: { t: Torrent }) {
   return (
     <span className="status-ico">
-      <StatusGlyph status={t.status} error={t.error} />
+      <span className="st-badge" style={{ background: statusColor(t.status, t.error) }}>
+        <StatusGlyph status={t.status} error={t.error} />
+      </span>
     </span>
   );
 }

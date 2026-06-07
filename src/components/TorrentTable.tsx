@@ -55,7 +55,24 @@ const columns: ColumnDef<Torrent>[] = [
   { id: 'up', header: 'Up', size: 86, cell: ({ row }) => <span className="num">{speed(row.original.rateUpload)}</span> },
   { id: 'eta', header: 'ETA', size: 74, cell: ({ row }) => <span className="num">{eta(row.original.eta)}</span> },
   { id: 'ratio', header: 'Ratio', size: 58, cell: ({ row }) => <span className="num">{ratio(row.original.uploadRatio)}</span> },
+  {
+    id: 'added',
+    header: 'Added',
+    size: 130,
+    cell: ({ row }) => <span className="num">{addedStr(row.original.addedDate)}</span>,
+  },
 ];
+
+function addedStr(ts: number): string {
+  if (!ts) return '';
+  return new Date(ts * 1000).toLocaleString(undefined, {
+    year: '2-digit',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 // our sort keys differ from a couple of column ids
 const colSortKey: Record<string, string> = { status_text: 'status' };
@@ -67,10 +84,11 @@ interface Props {
   sort: SortState;
   onSort: (key: string) => void;
   busy: Set<number>;
+  scrollToId?: number;
   onContext: (x: number, y: number) => void;
 }
 
-export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, onContext }: Props) {
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, scrollToId, onContext }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
@@ -98,6 +116,14 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
     estimateSize: () => ROW_H,
     overscan: 14,
   });
+
+  // keep the keyboard-selected row in view
+  useEffect(() => {
+    if (scrollToId == null) return;
+    const i = torrents.findIndex((t) => t.id === scrollToId);
+    if (i >= 0) virtualizer.scrollToIndex(i, { align: 'auto' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollToId]);
 
   function clickRow(e: React.MouseEvent, t: Torrent, index: number) {
     if (e.shiftKey && anchor.current != null) {
@@ -133,11 +159,14 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
         <div className="thead" style={{ width: totalWidth }}>
           {table.getHeaderGroups()[0].headers.map((header) => {
             const sortKey = colSortKey[header.column.id] ?? header.column.id;
+            const sortable = header.column.id !== 'status'; // the icon column isn't sortable
             return (
               <div key={header.id} className="th" style={{ width: header.getSize() }}>
-                <span className="th-label" onClick={() => onSort(sortKey)}>
+                <span className="th-label" onClick={sortable ? () => onSort(sortKey) : undefined}>
                   {flexRender(header.column.columnDef.header, header.getContext())}
-                  {sort.key === sortKey && <span className="sort-arrow">{sort.dir === 'asc' ? '▲' : '▼'}</span>}
+                  {sortable && sort.key === sortKey && (
+                    <span className="sort-arrow">{sort.dir === 'asc' ? '▲' : '▼'}</span>
+                  )}
                 </span>
                 {header.column.getCanResize() && (
                   <div

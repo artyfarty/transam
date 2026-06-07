@@ -408,6 +408,19 @@ body {
   justify-content: center;
   width: 100%;
 }
+.st-badge {
+  width: 17px;
+  height: 17px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.st-badge svg {
+  width: 11px;
+  height: 11px;
+}
 
 /* ---- general tab (redesigned) ---- */
 .general {

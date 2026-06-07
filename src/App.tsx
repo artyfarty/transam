@@ -317,6 +317,15 @@ export function App() {
         act(anyActive ? 'stop' : 'start');
       } else if (e.key === 'Delete') {
         act('remove');
+      } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        if (!filtered.length) return;
+        e.preventDefault();
+        const cur = ids.length === 1 ? filtered.findIndex((t) => t.id === ids[0]) : -1;
+        let ni: number;
+        if (cur === -1) ni = e.key === 'ArrowDown' ? 0 : filtered.length - 1;
+        else if (e.key === 'ArrowDown') ni = Math.min(filtered.length - 1, cur + 1);
+        else ni = Math.max(0, cur - 1);
+        setSelected(new Set([filtered[ni].id]));
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
         e.preventDefault();
         setSelected(new Set(filtered.map((t) => t.id)));
@@ -401,6 +410,7 @@ export function App() {
             sort={sort}
             onSort={onSort}
             busy={busy}
+            scrollToId={ids.length === 1 ? ids[0] : undefined}
             onContext={(x, y) => setMenu({ x, y })}
           />
           <Splitter
