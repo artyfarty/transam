@@ -307,9 +307,17 @@ export function App() {
       setDetail(null);
       return;
     }
-    fetchDetail();
-    const iv = setInterval(fetchDetail, POLL_MS);
-    return () => clearInterval(iv);
+    let alive = true;
+    let handle: ReturnType<typeof setTimeout>;
+    const loop = async () => {
+      await fetchDetail();
+      if (alive) handle = setTimeout(loop, POLL_MS);
+    };
+    loop();
+    return () => {
+      alive = false;
+      clearTimeout(handle);
+    };
   }, [selId, fetchDetail]);
 
   if (config === undefined) return null; // loading
