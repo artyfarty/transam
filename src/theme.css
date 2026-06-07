@@ -882,6 +882,7 @@ table.files select {
 }
 .menu-root {
   position: relative;
+  z-index: 21; /* above the close-on-outside backdrop so hover switches menus */
 }
 .menu-label {
   background: transparent;
