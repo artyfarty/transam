@@ -1,28 +1,44 @@
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+  type ColumnDef,
+  type ColumnSizingState,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Torrent } from '../../shared/types';
 import { TorrentStatus } from '../../shared/types';
 import { humanSize, speed, percent, ratio, eta, statusText } from '../format';
+import { StatusIcon } from './icons';
+import { loadJSON, saveJSON } from '../persist';
 import type { SortState } from '../sort';
 
-const ROW_H = 23;
-const OVERSCAN = 8;
+const ROW_H = 24;
 
-interface Column {
-  key: string;
-  label: string;
-  width: number; // 0 = flexible (name)
-  cls?: string;
-  render: (t: Torrent) => React.ReactNode;
-}
-
-const columns: Column[] = [
-  { key: 'name', label: 'Name', width: 0, render: (t) => t.name },
-  { key: 'size', label: 'Size', width: 80, cls: 'num', render: (t) => humanSize(t.sizeWhenDone || t.totalSize) },
+const columns: ColumnDef<Torrent>[] = [
   {
-    key: 'done',
-    label: 'Done',
-    width: 110,
-    render: (t) => {
+    id: 'status',
+    header: '',
+    size: 28,
+    minSize: 28,
+    maxSize: 28,
+    enableResizing: false,
+    cell: ({ row }) => <StatusIcon t={row.original} />,
+  },
+  { id: 'name', header: 'Name', size: 360, cell: ({ row }) => <span className="ellip">{row.original.name}</span> },
+  {
+    id: 'size',
+    header: 'Size',
+    size: 84,
+    cell: ({ row }) => <span className="num">{humanSize(row.original.sizeWhenDone || row.original.totalSize)}</span>,
+  },
+  {
+    id: 'done',
+    header: 'Done',
+    size: 120,
+    cell: ({ row }) => {
+      const t = row.original;
       const cls = t.status === TorrentStatus.Stopped ? 'paused' : t.percentDone >= 1 ? 'done' : '';
       return (
         <div className={`bar ${cls}`}>
@@ -32,14 +48,17 @@ const columns: Column[] = [
       );
     },
   },
-  { key: 'status', label: 'Status', width: 96, render: (t) => statusText(t) },
-  { key: 'seeds', label: 'Seeds', width: 54, cls: 'num', render: (t) => String(t.peersSendingToUs) },
-  { key: 'peers', label: 'Peers', width: 54, cls: 'num', render: (t) => String(t.peersGettingFromUs) },
-  { key: 'down', label: 'Down', width: 78, cls: 'num', render: (t) => speed(t.rateDownload) },
-  { key: 'up', label: 'Up', width: 78, cls: 'num', render: (t) => speed(t.rateUpload) },
-  { key: 'eta', label: 'ETA', width: 70, cls: 'num', render: (t) => eta(t.eta) },
-  { key: 'ratio', label: 'Ratio', width: 54, cls: 'num', render: (t) => ratio(t.uploadRatio) },
+  { id: 'status_text', header: 'Status', size: 100, cell: ({ row }) => statusText(row.original) },
+  { id: 'seeds', header: 'Seeds', size: 58, cell: ({ row }) => <span className="num">{row.original.peersSendingToUs}</span> },
+  { id: 'peers', header: 'Peers', size: 58, cell: ({ row }) => <span className="num">{row.original.peersGettingFromUs}</span> },
+  { id: 'down', header: 'Down', size: 86, cell: ({ row }) => <span className="num">{speed(row.original.rateDownload)}</span> },
+  { id: 'up', header: 'Up', size: 86, cell: ({ row }) => <span className="num">{speed(row.original.rateUpload)}</span> },
+  { id: 'eta', header: 'ETA', size: 74, cell: ({ row }) => <span className="num">{eta(row.original.eta)}</span> },
+  { id: 'ratio', header: 'Ratio', size: 58, cell: ({ row }) => <span className="num">{ratio(row.original.uploadRatio)}</span> },
 ];
+
+// our sort keys differ from a couple of column ids
+const colSortKey: Record<string, string> = { status_text: 'status' };
 
 interface Props {
   torrents: Torrent[];
@@ -51,35 +70,41 @@ interface Props {
 }
 
 export function TorrentTable({ torrents, selected, onSelect, sort, onSort, onContext }: Props) {
-  const bodyRef = useRef<HTMLDivElement>(null);
+  const parentRef = useRef<HTMLDivElement>(null);
+  const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [vh, setVh] = useState(400);
 
-  useLayoutEffect(() => {
-    const el = bodyRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setVh(el.clientHeight));
-    ro.observe(el);
-    setVh(el.clientHeight);
-    return () => ro.disconnect();
-  }, []);
+  const [colSizing, setColSizing] = useState<ColumnSizingState>(() => loadJSON<ColumnSizingState>('colSizing', {}));
+  useEffect(() => saveJSON('colSizing', colSizing), [colSizing]);
 
-  const total = torrents.length * ROW_H;
-  const start = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
-  const end = Math.min(torrents.length, Math.ceil((scrollTop + vh) / ROW_H) + OVERSCAN);
-  const visible = torrents.slice(start, end);
+  const table = useReactTable({
+    data: torrents,
+    columns,
+    state: { columnSizing: colSizing },
+    onColumnSizingChange: setColSizing,
+    columnResizeMode: 'onChange',
+    enableColumnResizing: true,
+    getCoreRowModel: getCoreRowModel(),
+    defaultColumn: { minSize: 44 },
+  });
+
+  const rows = table.getRowModel().rows;
+  const totalWidth = table.getTotalSize();
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_H,
+    overscan: 14,
+  });
 
   function clickRow(e: React.MouseEvent, t: Torrent, index: number) {
     if (e.shiftKey && anchor.current != null) {
-      const ai = torrents.findIndex((x) => x.id === anchor.current);
-      if (ai >= 0) {
-        const [lo, hi] = ai < index ? [ai, index] : [index, ai];
-        const next = new Set<number>();
-        for (let i = lo; i <= hi; i++) next.add(torrents[i].id);
-        onSelect(next);
-        return;
-      }
+      const [lo, hi] = anchor.current < index ? [anchor.current, index] : [index, anchor.current];
+      const next = new Set<number>();
+      for (let i = lo; i <= hi; i++) next.add(rows[i].original.id);
+      onSelect(next);
+      return;
     }
     const next = new Set(selected);
     if (e.ctrlKey || e.metaKey) {
@@ -101,40 +126,67 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, onCon
     onContext(e.clientX, e.clientY);
   }
 
-  const colStyle = (c: Column): React.CSSProperties =>
-    c.width === 0 ? { flex: '1 1 auto', minWidth: 120 } : { flex: `0 0 ${c.width}px`, width: c.width };
-
   return (
     <div className="table">
-      <div className="thead">
-        {columns.map((c) => (
-          <div key={c.key} className="th" style={colStyle(c)} onClick={() => onSort(c.key)}>
-            {c.label}
-            {sort.key === c.key && <span className="sort-arrow">{sort.dir === 'asc' ? '▲' : '▼'}</span>}
-          </div>
-        ))}
+      <div className="thead-wrap" ref={headRef}>
+        <div className="thead" style={{ width: totalWidth }}>
+          {table.getHeaderGroups()[0].headers.map((header) => {
+            const sortKey = colSortKey[header.column.id] ?? header.column.id;
+            return (
+              <div key={header.id} className="th" style={{ width: header.getSize() }}>
+                <span className="th-label" onClick={() => onSort(sortKey)}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {sort.key === sortKey && <span className="sort-arrow">{sort.dir === 'asc' ? '▲' : '▼'}</span>}
+                </span>
+                {header.column.getCanResize() && (
+                  <div
+                    className={`col-resize ${header.column.getIsResizing() ? 'on' : ''}`}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      header.getResizeHandler()(e);
+                    }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <div className="tbody" ref={bodyRef} onScroll={(e) => setScrollTop(e.currentTarget.scrollTop)}>
-        <div style={{ height: total }} />
-        {visible.map((t, i) => {
-          const index = start + i;
-          const sel = selected.has(t.id);
-          return (
-            <div
-              key={t.id}
-              className={`row ${index % 2 ? 'odd' : 'even'} ${sel ? 'sel' : ''}`}
-              style={{ top: index * ROW_H }}
-              onMouseDown={(e) => clickRow(e, t, index)}
-              onContextMenu={(e) => contextRow(e, t, index)}
-            >
-              {columns.map((c) => (
-                <div key={c.key} className={`cell ${c.cls ?? ''}`} style={colStyle(c)} title={c.key === 'name' ? t.name : undefined}>
-                  {c.render(t)}
-                </div>
-              ))}
-            </div>
-          );
-        })}
+
+      <div
+        className="tbody"
+        ref={parentRef}
+        onScroll={(e) => {
+          if (headRef.current) headRef.current.scrollLeft = e.currentTarget.scrollLeft;
+        }}
+      >
+        <div style={{ height: virtualizer.getTotalSize(), width: totalWidth, position: 'relative' }}>
+          {virtualizer.getVirtualItems().map((vi) => {
+            const row = rows[vi.index];
+            const t = row.original;
+            const sel = selected.has(t.id);
+            return (
+              <div
+                key={t.id}
+                className={`row ${vi.index % 2 ? 'odd' : 'even'} ${sel ? 'sel' : ''}`}
+                style={{ position: 'absolute', top: vi.start, height: ROW_H, width: totalWidth }}
+                onMouseDown={(e) => clickRow(e, t, vi.index)}
+                onContextMenu={(e) => contextRow(e, t, vi.index)}
+              >
+                {row.getVisibleCells().map((cell) => (
+                  <div
+                    key={cell.id}
+                    className="cell"
+                    style={{ width: cell.column.getSize() }}
+                    title={cell.column.id === 'name' ? t.name : undefined}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
