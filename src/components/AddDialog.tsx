@@ -1,25 +1,40 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { OpenAddPayload } from '../../shared/types';
+import { extractName } from '../series';
 
 interface Props {
   prefill?: OpenAddPayload | null;
   suggestions?: string[];
   defaultDir?: string;
+  suggestDir?: (name: string) => string | undefined;
   onAdd: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused: boolean }) => Promise<void>;
   onCancel: () => void;
 }
 
-export function AddDialog({ prefill, suggestions = [], defaultDir = '', onAdd, onCancel }: Props) {
+export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestDir, onAdd, onCancel }: Props) {
   const [url, setUrl] = useState(prefill?.url ?? '');
   const metainfo = prefill?.metainfo;
   const [dir, setDir] = useState(defaultDir);
+  const [dirTouched, setDirTouched] = useState(false);
   const [paused, setPaused] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  // Auto-suggest the folder of an existing series, until the user edits it.
+  useEffect(() => {
+    if (dirTouched || !suggestDir) return;
+    const name = metainfo ? (prefill?.name ?? '') : url.trim() ? extractName(url.trim()) : '';
+    if (!name) return;
+    const s = suggestDir(name);
+    if (s) setDir(s);
+  }, [url, metainfo, prefill, dirTouched, suggestDir]);
+
   async function pick() {
     const r = await window.api.pickFolder();
-    if (r) setDir(r.remote);
+    if (r) {
+      setDir(r.remote);
+      setDirTouched(true);
+    }
   }
 
   async function submit() {
@@ -66,7 +81,10 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', onAdd, o
               style={{ flex: 1 }}
               list="destDirs"
               value={dir}
-              onChange={(e) => setDir(e.target.value)}
+              onChange={(e) => {
+                setDir(e.target.value);
+                setDirTouched(true);
+              }}
               placeholder="default"
             />
             <datalist id="destDirs">

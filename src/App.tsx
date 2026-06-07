@@ -12,6 +12,7 @@ import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
+import { suggestDir } from './series';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
@@ -348,6 +349,7 @@ export function App() {
           prefill={addPrefill}
           suggestions={dirSuggestions}
           defaultDir={recentDirs[0] ?? ''}
+          suggestDir={(name) => suggestDir(name, torrents)}
           onCancel={() => {
             setShowAdd(false);
             setAddPrefill(null);
