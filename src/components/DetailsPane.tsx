@@ -181,13 +181,13 @@ function SeedingControl({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onR
 
 function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: () => void }) {
   if (d.files.length === 0) return <div className="empty">No files</div>;
-  const setWanted = async (idx: number, wanted: boolean) => {
-    await window.api.set([t.id], wanted ? { 'files-wanted': [idx] } : { 'files-unwanted': [idx] });
+  const setWanted = async (idxs: number[], wanted: boolean) => {
+    await window.api.set([t.id], wanted ? { 'files-wanted': idxs } : { 'files-unwanted': idxs });
     onRefresh();
   };
-  const setPriority = async (idx: number, pr: number) => {
+  const setPriority = async (idxs: number[], pr: number) => {
     const key = pr > 0 ? 'priority-high' : pr < 0 ? 'priority-low' : 'priority-normal';
-    await window.api.set([t.id], { [key]: [idx] });
+    await window.api.set([t.id], { [key]: idxs });
     onRefresh();
   };
   const fullPath = (name: string) => `${(d.downloadDir ?? '').replace(/\/+$/, '')}/${name}`;

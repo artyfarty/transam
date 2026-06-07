@@ -1,0 +1,45 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transam torrent file">
+  <title>Transam torrent file</title>
+  <defs>
+    <linearGradient id="fiPage" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#262a31"/>
+      <stop offset="100%" stop-color="#191c21"/>
+    </linearGradient>
+    <radialGradient id="fiCore" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#cafff1"/>
+      <stop offset="40%" stop-color="#43e3a3"/>
+      <stop offset="100%" stop-color="#168a63"/>
+    </radialGradient>
+    <linearGradient id="fiBlade" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f2f7fd"/>
+      <stop offset="100%" stop-color="#8fb2d8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- page body -->
+  <path d="M152 84 a12 12 0 0 1 12 -12 L332 72 L400 140 L400 436 a12 12 0 0 1 -12 12 L164 448 a12 12 0 0 1 -12 -12 Z"
+        fill="url(#fiPage)" stroke="#3a3f49" stroke-width="3"/>
+  <!-- folded corner -->
+  <path d="M332 72 L332 128 a12 12 0 0 0 12 12 L400 140 Z" fill="#33373f"/>
+  <path d="M332 72 L400 140" fill="none" stroke="#3a3f49" stroke-width="3"/>
+
+  <!-- mark -->
+  <g transform="translate(164 168) scale(7)">
+    <path d="M17 15 L30 4.5 L25 15 L18.5 18.5 Z" fill="url(#fiBlade)"/>
+    <path d="M30 4.5 L25 15 L27.4 10.5 Z" fill="#43e3a3"/>
+    <g transform="translate(32,0) scale(-1,1)">
+      <path d="M17 15 L30 4.5 L25 15 L18.5 18.5 Z" fill="url(#fiBlade)"/>
+      <path d="M30 4.5 L25 15 L27.4 10.5 Z" fill="#43e3a3"/>
+    </g>
+    <circle cx="16" cy="17.5" r="9" fill="#10221c"/>
+    <circle cx="16" cy="17.5" r="7.8" fill="url(#fiCore)"/>
+    <g stroke-linecap="round" stroke-linejoin="round" fill="none" stroke-width="2.4">
+      <path d="M12.6 22.5 L12.6 12.8 M10 15.2 L12.6 12.2 L15.2 15.2" stroke="#f3fffb"/>
+      <path d="M19.4 12.5 L19.4 22.2 M16.8 19.8 L19.4 22.8 L22 19.8" stroke="#0c3526"/>
+    </g>
+  </g>
+
+  <!-- extension label -->
+  <rect x="196" y="386" width="160" height="34" rx="8" fill="#315a8c"/>
+  <text x="276" y="409" text-anchor="middle" font-family="Segoe UI, system-ui, sans-serif" font-size="20" font-weight="600" letter-spacing="2" fill="#eaf2fb">TORRENT</text>
+</svg>

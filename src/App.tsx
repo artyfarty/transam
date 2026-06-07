@@ -46,7 +46,7 @@ export function App() {
   }, []);
   const [detailsFrac, setDetailsFrac] = useState<number>(() => loadJSON('detailsFrac', 0.3));
   useEffect(() => saveJSON('detailsFrac', detailsFrac), [detailsFrac]);
-  const detailsH = Math.round(clamp(mainH * detailsFrac, 110, Math.max(140, mainH - 160)));
+  const detailsH = Math.round(clamp(mainH * detailsFrac, 110, Math.max(140, mainH - 110)));
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
@@ -278,7 +278,7 @@ export function App() {
           />
           <Splitter
             orientation="h"
-            onDrag={(d) => setDetailsFrac((f) => clamp(f - d / Math.max(1, mainH), 0.12, 0.7))}
+            onDrag={(d) => setDetailsFrac((f) => clamp(f - d / Math.max(1, mainH), 0.1, 0.85))}
           />
           <DetailsPane
             torrent={selectedTorrent}

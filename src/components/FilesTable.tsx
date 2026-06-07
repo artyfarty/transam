@@ -21,10 +21,9 @@ interface FileRow {
 }
 
 interface FilesMeta {
-  setWanted: (i: number, wanted: boolean) => void;
-  setPriority: (i: number, pr: number) => void;
+  setWanted: (idxs: number[], wanted: boolean) => void;
+  setPriority: (idxs: number[], pr: number) => void;
 }
-
 function meta(table: { options: { meta?: unknown } }): FilesMeta {
   return table.options.meta as FilesMeta;
 }
@@ -43,7 +42,8 @@ const columns: ColumnDef<FileRow>[] = [
       <input
         type="checkbox"
         checked={row.original.st?.wanted ?? true}
-        onChange={(e) => meta(table).setWanted(row.original.i, e.target.checked)}
+        onMouseDown={(e) => e.stopPropagation()}
+        onChange={(e) => meta(table).setWanted([row.original.i], e.target.checked)}
       />
     ),
   },
@@ -77,7 +77,8 @@ const columns: ColumnDef<FileRow>[] = [
       <select
         value={row.original.st?.priority ?? 0}
         disabled={!(row.original.st?.wanted ?? true)}
-        onChange={(e) => meta(table).setPriority(row.original.i, Number(e.target.value))}
+        onMouseDown={(e) => e.stopPropagation()}
+        onChange={(e) => meta(table).setPriority([row.original.i], Number(e.target.value))}
       >
         <option value={1}>High</option>
         <option value={0}>Normal</option>
@@ -89,8 +90,8 @@ const columns: ColumnDef<FileRow>[] = [
 
 interface Props {
   detail: TorrentDetail;
-  onSetWanted: (idx: number, wanted: boolean) => void;
-  onSetPriority: (idx: number, pr: number) => void;
+  onSetWanted: (idxs: number[], wanted: boolean) => void;
+  onSetPriority: (idxs: number[], pr: number) => void;
   onOpen: (name: string) => void;
   onReveal: (name: string) => void;
 }
@@ -98,8 +99,10 @@ interface Props {
 export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onReveal }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
+  const anchor = useRef<number | null>(null);
   const [colSizing, setColSizing] = useState<ColumnSizingState>(() => loadJSON<ColumnSizingState>('fileColSizing', {}));
   useEffect(() => saveJSON('fileColSizing', colSizing), [colSizing]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [menu, setMenu] = useState<{ x: number; y: number; row: FileRow } | null>(null);
 
   const data = useMemo<FileRow[]>(
@@ -128,18 +131,39 @@ export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onRevea
     overscan: 12,
   });
 
+  function clickRow(e: React.MouseEvent, i: number) {
+    if (e.shiftKey && anchor.current != null) {
+      const [lo, hi] = anchor.current < i ? [anchor.current, i] : [i, anchor.current];
+      const next = new Set<number>();
+      for (let k = lo; k <= hi; k++) next.add(k);
+      setSelected(next);
+      return;
+    }
+    if (e.ctrlKey || e.metaKey) {
+      const next = new Set(selected);
+      next.has(i) ? next.delete(i) : next.add(i);
+      setSelected(next);
+    } else {
+      setSelected(new Set([i]));
+    }
+    anchor.current = i;
+  }
+
+  // which file indices an action should target from the context menu
+  const targetIdx = (i: number): number[] => (selected.has(i) && selected.size > 1 ? [...selected] : [i]);
+
   const menuItems: MenuItem[] = menu
     ? [
         { label: 'Open', onClick: () => onOpen(menu.row.f.name) },
         { label: 'Show in Explorer', onClick: () => onReveal(menu.row.f.name) },
         { separator: true },
-        { label: 'Priority: High', onClick: () => onSetPriority(menu.row.i, 1) },
-        { label: 'Priority: Normal', onClick: () => onSetPriority(menu.row.i, 0) },
-        { label: 'Priority: Low', onClick: () => onSetPriority(menu.row.i, -1) },
+        { label: 'Priority: High', onClick: () => onSetPriority(targetIdx(menu.row.i), 1) },
+        { label: 'Priority: Normal', onClick: () => onSetPriority(targetIdx(menu.row.i), 0) },
+        { label: 'Priority: Low', onClick: () => onSetPriority(targetIdx(menu.row.i), -1) },
         { separator: true },
         (menu.row.st?.wanted ?? true)
-          ? { label: "Don't download", onClick: () => onSetWanted(menu.row.i, false) }
-          : { label: 'Download', onClick: () => onSetWanted(menu.row.i, true) },
+          ? { label: "Don't download", onClick: () => onSetWanted(targetIdx(menu.row.i), false) }
+          : { label: 'Download', onClick: () => onSetWanted(targetIdx(menu.row.i), true) },
       ]
     : [];
 
@@ -173,14 +197,20 @@ export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onRevea
         <div style={{ height: virtualizer.getTotalSize(), width: totalWidth, position: 'relative' }}>
           {virtualizer.getVirtualItems().map((vi) => {
             const row = rows[vi.index];
+            const i = row.original.i;
             return (
               <div
-                key={row.original.i}
-                className={`row ${vi.index % 2 ? 'odd' : 'even'}`}
+                key={i}
+                className={`row ${vi.index % 2 ? 'odd' : 'even'} ${selected.has(i) ? 'sel' : ''}`}
                 style={{ position: 'absolute', top: vi.start, height: ROW_H, width: totalWidth }}
+                onMouseDown={(e) => clickRow(e, i)}
                 onDoubleClick={() => onOpen(row.original.f.name)}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  if (!selected.has(i)) {
+                    setSelected(new Set([i]));
+                    anchor.current = i;
+                  }
                   setMenu({ x: e.clientX, y: e.clientY, row: row.original });
                 }}
                 title="Double-click to open"
