@@ -6,6 +6,7 @@ import { DetailsPane } from './components/DetailsPane';
 import { StatusBar } from './components/StatusBar';
 import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
+import { AboutModal } from './components/AboutModal';
 import { Sidebar } from './components/Sidebar';
 import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
@@ -52,6 +53,7 @@ export function App() {
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
   const [showConnect, setShowConnect] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
   const timer = useRef<ReturnType<typeof setInterval>>();
 
@@ -167,6 +169,19 @@ export function App() {
       poll();
     }
   }
+
+  // native menu (File/Edit/Help) actions arrive over IPC; dispatch with the
+  // latest closures via a ref so the one-time subscription stays fresh.
+  const onMenu = (a: string) => {
+    if (a === 'add') setShowAdd(true);
+    else if (a === 'settings') setShowConnect(true);
+    else if (a === 'about') setShowAbout(true);
+    else if (a === 'relocate') relocate();
+    else act(a);
+  };
+  const onMenuRef = useRef(onMenu);
+  onMenuRef.current = onMenu;
+  useEffect(() => window.api.onMenuAction((a) => onMenuRef.current(a)), []);
 
   const ctxTarget = () => torrents.find((t) => t.id === ids[0]);
   function openFolder() {
@@ -299,6 +314,7 @@ export function App() {
       />
 
       {menu && <ContextMenu x={menu.x} y={menu.y} items={menuItems} onClose={() => setMenu(null)} />}
+      {showAbout && <AboutModal onClose={() => setShowAbout(false)} />}
 
       {showConnect && (
         <ConnectDialog

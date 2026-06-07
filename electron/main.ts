@@ -1,4 +1,5 @@
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
+import type { MenuItemConstructorOptions } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TransmissionClient } from './transmission';
@@ -201,6 +202,48 @@ function handleArgv(argv: string[]): void {
   }
 }
 
+// --- application menu -------------------------------------------------------
+function send(action: string): void {
+  win?.webContents.send('menu-action', action);
+}
+
+function buildMenu(): void {
+  const isMac = process.platform === 'darwin';
+  const template: MenuItemConstructorOptions[] = [
+    ...(isMac ? [{ role: 'appMenu' as const }] : []),
+    {
+      label: 'File',
+      submenu: [
+        { label: 'Add Torrent / Magnet…', accelerator: 'CmdOrCtrl+N', click: () => send('add') },
+        { type: 'separator' },
+        { label: 'Connection Settings…', click: () => send('settings') },
+        { type: 'separator' },
+        isMac ? { role: 'close' } : { role: 'quit' },
+      ],
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { label: 'Start', click: () => send('start') },
+        { label: 'Start Now', click: () => send('start-now') },
+        { label: 'Pause', click: () => send('stop') },
+        { type: 'separator' },
+        { label: 'Verify', click: () => send('verify') },
+        { label: 'Reannounce', click: () => send('reannounce') },
+        { label: 'Set Location…', click: () => send('relocate') },
+        { type: 'separator' },
+        { label: 'Remove', click: () => send('remove') },
+        { label: 'Remove + Delete Data', click: () => send('remove-data') },
+      ],
+    },
+    {
+      label: 'Help',
+      submenu: [{ label: 'About Transam', click: () => send('about') }],
+    },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 // --- window state persistence ----------------------------------------------
 interface WinState {
   x?: number;
@@ -244,7 +287,7 @@ function createWindow(): void {
     minHeight: 420,
     backgroundColor: '#1b1d22',
     icon: path.join(__dirname, '../../dist/icon.png'),
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -292,6 +335,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     registerIpc();
+    buildMenu();
     createWindow();
     handleArgv(process.argv);
     app.on('activate', () => {

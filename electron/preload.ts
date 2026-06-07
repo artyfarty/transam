@@ -29,6 +29,11 @@ const api = {
     ipcRenderer.on('open-add', handler);
     return () => ipcRenderer.removeListener('open-add', handler);
   },
+  onMenuAction: (cb: (action: string) => void): (() => void) => {
+    const handler = (_e: IpcRendererEvent, action: string) => cb(action);
+    ipcRenderer.on('menu-action', handler);
+    return () => ipcRenderer.removeListener('menu-action', handler);
+  },
 };
 
 contextBridge.exposeInMainWorld('api', api);
