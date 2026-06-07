@@ -1,4 +1,4 @@
-import { IconPlus, IconPlay, IconPause, IconTrash, IconGear, IconSearch, IconSidebar } from './icons';
+import { UiIcon } from './UiIcon';
 
 interface Props {
   selectionCount: number;
@@ -22,34 +22,34 @@ export function Toolbar(p: Props) {
         onClick={p.onToggleSidebar}
         title="Toggle sidebar"
       >
-        <IconSidebar />
+        <UiIcon name="sidebar" />
       </button>
       <span className="sep" />
       <button onClick={p.onAdd} title="Add torrent">
-        <IconPlus />
+        <UiIcon name="add" />
         <span>Add</span>
       </button>
       <span className="sep" />
       <button disabled={none} onClick={p.onStart} title="Start">
-        <IconPlay />
+        <UiIcon name="start" />
         <span>Start</span>
       </button>
       <button disabled={none} onClick={p.onPause} title="Pause">
-        <IconPause />
+        <UiIcon name="pause" />
         <span>Pause</span>
       </button>
       <button disabled={none} onClick={p.onRemove} title="Remove">
-        <IconTrash />
+        <UiIcon name="remove" />
         <span>Remove</span>
       </button>
       <span className="spacer" />
       <div className="search-wrap">
-        <IconSearch />
+        <UiIcon name="search" />
         <input className="search" placeholder="Filter…" value={p.search} onChange={(e) => p.onSearch(e.target.value)} />
       </div>
       <span className="sep" />
       <button className="icon-only" onClick={p.onSettings} title="Connection settings">
-        <IconGear />
+        <UiIcon name="settings" />
       </button>
     </div>
   );

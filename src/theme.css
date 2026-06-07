@@ -75,6 +75,13 @@ body {
 .toolbar button svg {
   display: block;
 }
+.ui-ico {
+  display: inline-flex;
+  align-items: center;
+}
+.ui-ico svg {
+  display: block;
+}
 .toolbar button.icon-only {
   padding: 5px 7px;
 }
