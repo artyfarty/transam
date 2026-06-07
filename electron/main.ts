@@ -372,6 +372,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.whenReady().then(() => {
+    if (process.platform === 'win32') app.setAppUserModelId('dev.transam.app');
     registerIpc();
     buildMenu();
     createWindow();
