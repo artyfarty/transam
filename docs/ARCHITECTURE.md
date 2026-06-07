@@ -86,8 +86,12 @@ user edits the destination.
 
 ## Packaging
 
-`electron-builder` (`pnpm dist`) targets NSIS/AppImage with `build/icon.ico`.
-Building a Windows installer on Linux needs wine.
+`pnpm dist` builds the Windows **NSIS installer** (`electron-builder --win
+nsis`) — `release/Transam Setup <v>.exe`, with desktop + Start-menu shortcuts,
+an uninstaller, and the magnet/.torrent associations. On Linux this needs wine
+**and 32-bit support** (`dpkg --add-architecture i386 && apt install wine32`),
+since electron-builder runs the 32-bit `rcedit` under wine to stamp the exe
+icon/metadata. Building on Windows with Node avoids wine entirely.
 
 As a wine-free alternative, the native window/taskbar build is assembled by
 dropping `dist/` + `dist-electron/` + `package.json` into `resources/app/` of an
