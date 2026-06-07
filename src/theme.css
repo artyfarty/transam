@@ -130,6 +130,26 @@ body {
   min-height: 0;
 }
 
+/* ---- splitters ---- */
+.splitter {
+  flex: 0 0 auto;
+  background: var(--bg);
+  z-index: 1;
+}
+.splitter.v {
+  width: 4px;
+  cursor: col-resize;
+  border-left: 1px solid var(--border);
+}
+.splitter.h {
+  height: 4px;
+  cursor: row-resize;
+  border-top: 1px solid var(--border);
+}
+.splitter:hover {
+  background: var(--accent);
+}
+
 /* ---- sidebar ---- */
 .sidebar {
   flex: 0 0 160px;
@@ -388,6 +408,9 @@ table.files td {
   padding: 1px 6px;
   white-space: nowrap;
   border-bottom: 1px solid #00000018;
+}
+table.files tbody tr:hover {
+  background: #ffffff0a;
 }
 table.files td.num {
   text-align: right;

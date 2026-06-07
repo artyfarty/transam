@@ -20,6 +20,7 @@ const api = {
     ipcRenderer.invoke('torrents:add', opts),
   pickFolder: (): Promise<{ local: string; remote: string } | null> =>
     ipcRenderer.invoke('dialog:pickFolder'),
+  openPath: (daemonPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', daemonPath),
   onOpenAdd: (cb: (p: OpenAddPayload) => void): (() => void) => {
     const handler = (_e: IpcRendererEvent, p: OpenAddPayload) => cb(p);
     ipcRenderer.on('open-add', handler);

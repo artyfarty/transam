@@ -5,12 +5,13 @@ interface Props {
   torrents: Torrent[];
   filter: Filter;
   onFilter: (f: Filter) => void;
+  width: number;
 }
 
-export function Sidebar({ torrents, filter, onFilter }: Props) {
+export function Sidebar({ torrents, filter, onFilter, width }: Props) {
   const labels = collectLabels(torrents);
   return (
-    <div className="sidebar">
+    <div className="sidebar" style={{ flex: `0 0 ${width}px` }}>
       {CATEGORIES.map((c) => {
         const count = c.id === 'all' ? torrents.length : torrents.filter(c.test).length;
         const active = filter.kind === 'cat' && filter.id === c.id;

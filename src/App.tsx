@@ -7,6 +7,7 @@ import { StatusBar } from './components/StatusBar';
 import { ConnectDialog } from './components/ConnectDialog';
 import { AddDialog } from './components/AddDialog';
 import { Sidebar } from './components/Sidebar';
+import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
 import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
@@ -25,6 +26,11 @@ export function App() {
   const [sort, setSort] = useState<SortState>(() => loadJSON<SortState>('sort', { key: 'queue', dir: 'asc' }));
   useEffect(() => saveJSON('filter', filter), [filter]);
   useEffect(() => saveJSON('sort', sort), [sort]);
+  const [sidebarW, setSidebarW] = useState<number>(() => loadJSON('sidebarW', 168));
+  const [detailsH, setDetailsH] = useState<number>(() => loadJSON('detailsH', 200));
+  useEffect(() => saveJSON('sidebarW', sidebarW), [sidebarW]);
+  useEffect(() => saveJSON('detailsH', detailsH), [detailsH]);
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [showConnect, setShowConnect] = useState(false);
@@ -197,7 +203,8 @@ export function App() {
         onSettings={() => setShowConnect(true)}
       />
       <div className="body">
-        <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} />
+        <Sidebar torrents={torrents} filter={filter} onFilter={setFilter} width={sidebarW} />
+        <Splitter orientation="v" onDrag={(d) => setSidebarW((w) => clamp(w + d, 120, 420))} />
         <div className="main">
           <TorrentTable
             torrents={filtered}
@@ -207,7 +214,13 @@ export function App() {
             onSort={onSort}
             onContext={(x, y) => setMenu({ x, y })}
           />
-          <DetailsPane torrent={selectedTorrent} detail={selId === detail?.id ? detail : null} onRefresh={fetchDetail} />
+          <Splitter orientation="h" onDrag={(d) => setDetailsH((h) => clamp(h - d, 90, 480))} />
+          <DetailsPane
+            torrent={selectedTorrent}
+            detail={selId === detail?.id ? detail : null}
+            onRefresh={fetchDetail}
+            height={detailsH}
+          />
         </div>
       </div>
       <StatusBar connected={connected} serverVersion={serverVersion} count={torrents.length} downSpeed={down} upSpeed={up} />

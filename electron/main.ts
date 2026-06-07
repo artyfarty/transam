@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { TransmissionClient } from './transmission';
@@ -33,6 +33,20 @@ function localToRemote(cfg: ServerConfig, local: string): string {
     }
   }
   return local;
+}
+
+function remoteToLocal(cfg: ServerConfig, remote: string): string {
+  for (const m of cfg.pathMappings ?? []) {
+    const r = m.remote.replace(/\/+$/, '');
+    if (remote.toLowerCase().startsWith(r.toLowerCase())) {
+      const rest = remote.slice(r.length).replace(/^\/+/, '');
+      const win = /^[A-Za-z]:/.test(m.local) || m.local.includes('\\');
+      const sep = win ? '\\' : '/';
+      const tail = win ? rest.replace(/\//g, '\\') : rest;
+      return m.local.replace(/[\\/]+$/, '') + sep + tail;
+    }
+  }
+  return remote;
 }
 
 function ensureClient(): TransmissionClient {
@@ -124,6 +138,13 @@ function registerIpc(): void {
       return c.call('torrent-add', args);
     },
   );
+
+  // Open a file/folder that lives on the daemon, via its mapped local path.
+  ipcMain.handle('shell:openPath', async (_e, daemonPath: string): Promise<string> => {
+    const cfg = loadConfig();
+    const local = cfg ? remoteToLocal(cfg, daemonPath) : daemonPath;
+    return shell.openPath(local); // '' on success, else an error message
+  });
 
   // Native folder picker that maps the chosen local path to the daemon path.
   ipcMain.handle('dialog:pickFolder', async (): Promise<{ local: string; remote: string } | null> => {

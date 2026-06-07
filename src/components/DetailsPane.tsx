@@ -8,21 +8,22 @@ interface Props {
   torrent: Torrent | null;
   detail: TorrentDetail | null;
   onRefresh: () => void;
+  height: number;
 }
 
-export function DetailsPane({ torrent, detail, onRefresh }: Props) {
+export function DetailsPane({ torrent, detail, onRefresh, height }: Props) {
   const [tab, setTab] = useState<Tab>('general');
 
   if (!torrent) {
     return (
-      <div className="details">
+      <div className="details" style={{ height }}>
         <div className="empty">No torrent selected</div>
       </div>
     );
   }
 
   return (
-    <div className="details">
+    <div className="details" style={{ height }}>
       <div className="tabs">
         {(['general', 'files', 'peers', 'trackers'] as Tab[]).map((t) => (
           <div key={t} className={`tab ${tab === t ? 'active' : ''}`} onClick={() => setTab(t)}>
@@ -114,6 +115,10 @@ function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onRef
     await window.api.set([t.id], { [key]: [idx] });
     onRefresh();
   }
+  function openFile(name: string) {
+    const dir = (d?.downloadDir ?? '').replace(/\/+$/, '');
+    void window.api.openPath(`${dir}/${name}`);
+  }
 
   return (
     <table className="files">
@@ -131,7 +136,7 @@ function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onRef
           const st = d.fileStats[i];
           const done = f.length ? f.bytesCompleted / f.length : 0;
           return (
-            <tr key={i}>
+            <tr key={i} onDoubleClick={() => openFile(f.name)} title="Double-click to open">
               <td>
                 <input type="checkbox" checked={st?.wanted ?? true} onChange={(e) => setWanted(i, e.target.checked)} />
               </td>
