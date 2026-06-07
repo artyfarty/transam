@@ -71,11 +71,13 @@ function General({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onR
       <div className={`bar big ${done ? 'done' : t.status === 0 ? 'paused' : ''}`}>
         <i style={{ width: `${Math.min(100, t.percentDone * 100)}%` }} />
         <span>
-          {percent(t.percentDone)} · {statusText(t)}
+          {percent(t.percentDone)}
           {t.rateDownload > 0 ? ` · ↓ ${speed(t.rateDownload)}` : ''}
           {t.rateUpload > 0 ? ` · ↑ ${speed(t.rateUpload)}` : ''}
         </span>
       </div>
+
+      <div className={`g-status ${t.error ? 'err' : ''}`}>{t.error ? t.errorString || statusText(t) : statusText(t)}</div>
 
       {d?.pieces ? <PieceBar pieces={d.pieces} pieceCount={d.pieceCount} /> : null}
 
@@ -102,11 +104,6 @@ function General({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onR
       {d?.comment ? (
         <section className="g-sect">
           <KV k="Comment" v={d.comment} wide />
-        </section>
-      ) : null}
-      {t.error ? (
-        <section className="g-sect">
-          <KV k="Error" v={<span style={{ color: 'var(--error)' }}>{t.errorString}</span>} wide />
         </section>
       ) : null}
 
@@ -193,11 +190,18 @@ function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: (
     await window.api.set([t.id], { [key]: [idx] });
     onRefresh();
   };
-  const openFile = (name: string) => {
-    const dir = (d.downloadDir ?? '').replace(/\/+$/, '');
-    void window.api.openPath(`${dir}/${name}`);
-  };
-  return <FilesTable detail={d} onSetWanted={setWanted} onSetPriority={setPriority} onOpen={openFile} />;
+  const fullPath = (name: string) => `${(d.downloadDir ?? '').replace(/\/+$/, '')}/${name}`;
+  const openFile = (name: string) => void window.api.openPath(fullPath(name));
+  const revealFile = (name: string) => void window.api.showItem(fullPath(name));
+  return (
+    <FilesTable
+      detail={d}
+      onSetWanted={setWanted}
+      onSetPriority={setPriority}
+      onOpen={openFile}
+      onReveal={revealFile}
+    />
+  );
 }
 
 function Peers({ d }: { d: TorrentDetail | null }) {
