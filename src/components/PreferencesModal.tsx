@@ -6,13 +6,15 @@ type Theme = 'dark' | 'light';
 interface Props {
   theme: Theme;
   onTheme: (t: Theme) => void;
+  zoom: number;
+  onZoom: (z: number) => void;
   labelRules: LabelRule[];
   onLabelRules: (rules: LabelRule[]) => void;
   onRunLabelRules: () => void;
   onClose: () => void;
 }
 
-export function PreferencesModal({ theme, onTheme, labelRules, onLabelRules, onRunLabelRules, onClose }: Props) {
+export function PreferencesModal({ theme, onTheme, zoom, onZoom, labelRules, onLabelRules, onRunLabelRules, onClose }: Props) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
 
@@ -40,6 +42,18 @@ export function PreferencesModal({ theme, onTheme, labelRules, onLabelRules, onR
           <select value={theme} onChange={(e) => onTheme(e.target.value as Theme)}>
             <option value="dark">Dark</option>
             <option value="light">Light</option>
+          </select>
+        </div>
+
+        <div className="field">
+          <label>Interface scale</label>
+          <select value={zoom} onChange={(e) => onZoom(Number(e.target.value))}>
+            <option value={1}>100%</option>
+            <option value={1.1}>110%</option>
+            <option value={1.25}>125%</option>
+            <option value={1.5}>150%</option>
+            <option value={1.75}>175%</option>
+            <option value={2}>200%</option>
           </select>
         </div>
 

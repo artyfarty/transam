@@ -137,6 +137,11 @@ export function App() {
     document.documentElement.dataset.theme = theme;
     saveJSON('theme', theme);
   }, [theme]);
+  const [zoom, setZoom] = useState<number>(() => loadJSON('zoom', 1));
+  useEffect(() => {
+    void window.api.setZoom(zoom);
+    saveJSON('zoom', zoom);
+  }, [zoom]);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
 
   // OS opened a magnet link or .torrent file with us → open the Add dialog.
@@ -497,6 +502,8 @@ export function App() {
         <PreferencesModal
           theme={theme}
           onTheme={setTheme}
+          zoom={zoom}
+          onZoom={setZoom}
           labelRules={labelRules}
           onLabelRules={setLabelRules}
           onRunLabelRules={runLabelRules}

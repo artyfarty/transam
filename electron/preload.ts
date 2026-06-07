@@ -29,6 +29,7 @@ const api = {
   showItem: (daemonPath: string): Promise<void> => ipcRenderer.invoke('shell:showItem', daemonPath),
   associate: (): Promise<string> => ipcRenderer.invoke('app:associate'),
   getLocale: (): Promise<string> => ipcRenderer.invoke('app:getLocale'),
+  setZoom: (factor: number): Promise<void> => ipcRenderer.invoke('app:setZoom', factor),
   onOpenAdd: (cb: (p: OpenAddPayload) => void): (() => void) => {
     const handler = (_e: IpcRendererEvent, p: OpenAddPayload) => cb(p);
     ipcRenderer.on('open-add', handler);

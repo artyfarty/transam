@@ -179,6 +179,11 @@ function registerIpc(): void {
   // OS regional locale (for date/number formatting in the renderer).
   ipcMain.handle('app:getLocale', () => app.getSystemLocale());
 
+  // interface scale (accessibility) — zoom the whole renderer
+  ipcMain.handle('app:setZoom', (_e, factor: number) => {
+    win?.webContents.setZoomFactor(factor);
+  });
+
   // Register as the magnet: protocol handler and the .torrent file association.
   ipcMain.handle('app:associate', async (): Promise<string> => {
     const out: string[] = [];
