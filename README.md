@@ -36,7 +36,11 @@ a light theme available. English-only UI.
   `transgui.ini` automatically and imports its connection profiles (host, port,
   auth, HTTPS, and path mappings); pick one if you had several.
 - **Preferences** — theme (**dark by default, light available**), interface
-  **scale** (for bigger text), label rules, register file associations.
+  **scale** (for bigger text), **launch at login**, **minimize to the system
+  tray**, label rules, register file associations.
+- **Personal label** — set a label that's stamped on every torrent you add, so
+  family members sharing one server can tell their torrents apart; your own
+  label stands out **bold in a gold frame** in the list.
 - **Stays responsive** — never freezes waiting on the server: it reconnects on
   its own, shows errors as toasts, and animates a row while its action is in
   flight. Remembers your layout (columns, panels, sort, window size) and shows

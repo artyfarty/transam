@@ -30,6 +30,14 @@ export interface ImportedProfile {
   config: ServerConfig;
 }
 
+/** Main-process-owned app preferences surfaced to the renderer. */
+export interface AppPrefs {
+  /** Launch Transam at OS login (the Windows login item). */
+  openAtLogin: boolean;
+  /** Minimizing hides the window to the system tray. */
+  minimizeToTray: boolean;
+}
+
 /** Result of trying to import connection profiles from transgui. */
 export interface ImportResult {
   found: boolean;

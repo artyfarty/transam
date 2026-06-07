@@ -414,6 +414,21 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* the local user's own personal label — bold, in a gold frame */
+.tag-chip.personal {
+  font-weight: 700;
+  border: 1px solid #e8b923;
+  box-shadow: 0 0 0 1px #e8b9234d;
+  padding: 0 5px;
+}
+.personal-preview {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 6px;
+}
 .cell > .bar {
   width: 100%;
 }

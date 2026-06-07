@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { LabelRule } from '../labelRules';
+import { labelColor } from '../format';
 
 type Theme = 'dark' | 'light';
 
@@ -11,12 +12,35 @@ interface Props {
   labelRules: LabelRule[];
   onLabelRules: (rules: LabelRule[]) => void;
   onRunLabelRules: () => void;
+  personalLabel: string;
+  onPersonalLabel: (s: string) => void;
   onClose: () => void;
 }
 
-export function PreferencesModal({ theme, onTheme, zoom, onZoom, labelRules, onLabelRules, onRunLabelRules, onClose }: Props) {
+export function PreferencesModal({
+  theme,
+  onTheme,
+  zoom,
+  onZoom,
+  labelRules,
+  onLabelRules,
+  onRunLabelRules,
+  personalLabel,
+  onPersonalLabel,
+  onClose,
+}: Props) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [openAtLogin, setOpenAtLogin] = useState(false);
+  const [minTray, setMinTray] = useState(false);
+
+  // Autostart + tray are owned by the main process; reflect their real state.
+  useEffect(() => {
+    window.api.getPrefs().then((p) => {
+      setOpenAtLogin(p.openAtLogin);
+      setMinTray(p.minimizeToTray);
+    });
+  }, []);
 
   async function associate() {
     setBusy(true);
@@ -55,6 +79,50 @@ export function PreferencesModal({ theme, onTheme, zoom, onZoom, labelRules, onL
             <option value={1.75}>175%</option>
             <option value={2}>200%</option>
           </select>
+        </div>
+
+        <div className="field">
+          <label>Startup &amp; window</label>
+          <label className="cfg-check">
+            <input
+              type="checkbox"
+              checked={openAtLogin}
+              onChange={(e) => {
+                setOpenAtLogin(e.target.checked);
+                void window.api.setAutostart(e.target.checked);
+              }}
+            />
+            <span>Launch Transam when I sign in</span>
+          </label>
+          <label className="cfg-check">
+            <input
+              type="checkbox"
+              checked={minTray}
+              onChange={(e) => {
+                setMinTray(e.target.checked);
+                void window.api.setMinimizeToTray(e.target.checked);
+              }}
+            />
+            <span>Minimize to the system tray</span>
+          </label>
+        </div>
+
+        <div className="field">
+          <label>Personal label — stamped on every torrent you add (so family members can tell theirs apart)</label>
+          <input
+            value={personalLabel}
+            placeholder="e.g. your name"
+            onChange={(e) => onPersonalLabel(e.target.value)}
+          />
+          {personalLabel.trim() && (
+            <div className="personal-preview">
+              Shows as{' '}
+              <span className="tag-chip personal" style={{ background: labelColor(personalLabel.trim()) }}>
+                {personalLabel.trim()}
+              </span>{' '}
+              on your torrents.
+            </div>
+          )}
         </div>
 
         <div className="field">

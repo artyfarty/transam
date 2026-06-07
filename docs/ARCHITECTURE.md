@@ -32,6 +32,9 @@ view that issues intents over IPC.
 | `config:get` / `config:set` | server connection config (in `userData`) |
 | `config:importTransgui` | parse connection profiles from a legacy `transgui.ini` |
 | `dialog:pickImportFile` | pick a `transgui.ini` when auto-detect misses |
+| `app:getPrefs` | read autostart (OS login item) + minimize-to-tray state |
+| `app:setAutostart` | toggle the Windows login item (`setLoginItemSettings`) |
+| `app:setMinimizeToTray` | toggle minimize-to-tray (persisted in `prefs.json`) |
 | `rpc:test` | `session-get` for version / liveness |
 | `torrents:get` | `torrent-get` list (summary fields) |
 | `torrents:detail` | `torrent-get` for one id (files/peers/trackers/pieces…) |
@@ -94,6 +97,21 @@ a profile; `[Hosts]` gives the order and the current one. Mapped fields: `Host`,
 pairs. Proxy settings are intentionally not imported (unsupported). With one
 profile the form is filled directly; with several the user picks one. Nothing is
 saved until they hit Connect.
+
+## Startup, tray, and the personal label
+
+- **Autostart** is the OS login item (`app.setLoginItemSettings`), so it survives
+  reinstalls and is read back with `getLoginItemSettings` rather than stored by us.
+- **Minimize to tray** is a main-owned pref in `userData/prefs.json` (so it's known
+  at launch before the renderer loads). When on, a `Tray` is created and the
+  window's `minimize` hides it (off the taskbar); the tray icon/menu restores or
+  quits. Both default off.
+- **Personal label** is a renderer pref (`localStorage`): a label sent in the
+  `labels` array of every `torrent-add` from this client, so family members can
+  tell their torrents apart. The list highlights a chip **bold in a gold frame**
+  when it equals the local personal label (`TableMeta.personalLabel`); everyone
+  else's labels render as normal chips. The label itself lives on the server like
+  any other Transmission label.
 
 ## Durability
 

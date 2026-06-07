@@ -1,4 +1,4 @@
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs } from '../shared/types';
 
 declare global {
   interface Window {
@@ -7,6 +7,9 @@ declare global {
       setConfig(cfg: ServerConfig): Promise<boolean>;
       importTransgui(explicitPath?: string): Promise<ImportResult>;
       pickImportFile(): Promise<string | null>;
+      getPrefs(): Promise<AppPrefs>;
+      setAutostart(enabled: boolean): Promise<boolean>;
+      setMinimizeToTray(enabled: boolean): Promise<boolean>;
       test(): Promise<RpcResult>;
       getTorrents(ids?: number[]): Promise<RpcResult>;
       sessionStats(): Promise<RpcResult>;
@@ -17,7 +20,7 @@ declare global {
       set(ids: number[], args: Record<string, unknown>): Promise<RpcResult>;
       setLocation(ids: number[], location: string, move: boolean): Promise<RpcResult>;
       action(action: string, ids: number[]): Promise<RpcResult>;
-      add(opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult>;
+      add(opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean; labels?: string[] }): Promise<RpcResult>;
       pickFolder(): Promise<{ local: string; remote: string } | null>;
       pickTorrent(): Promise<{ metainfo: string; name: string } | null>;
       parseTorrent(input: { url?: string; metainfo?: string }): Promise<TorrentPreview | { error: string }>;

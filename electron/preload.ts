@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs } from '../shared/types';
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
@@ -9,6 +9,9 @@ const api = {
   importTransgui: (explicitPath?: string): Promise<ImportResult> =>
     ipcRenderer.invoke('config:importTransgui', explicitPath),
   pickImportFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:pickImportFile'),
+  getPrefs: (): Promise<AppPrefs> => ipcRenderer.invoke('app:getPrefs'),
+  setAutostart: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('app:setAutostart', enabled),
+  setMinimizeToTray: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('app:setMinimizeToTray', enabled),
   test: (): Promise<RpcResult> => ipcRenderer.invoke('rpc:test'),
   getTorrents: (ids?: number[]): Promise<RpcResult> => ipcRenderer.invoke('torrents:get', ids),
   sessionStats: (): Promise<RpcResult> => ipcRenderer.invoke('session:stats'),
@@ -22,7 +25,7 @@ const api = {
     ipcRenderer.invoke('torrents:setLocation', ids, location, move),
   action: (action: string, ids: number[]): Promise<RpcResult> =>
     ipcRenderer.invoke('torrents:action', action, ids),
-  add: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult> =>
+  add: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean; labels?: string[] }): Promise<RpcResult> =>
     ipcRenderer.invoke('torrents:add', opts),
   pickFolder: (): Promise<{ local: string; remote: string } | null> =>
     ipcRenderer.invoke('dialog:pickFolder'),

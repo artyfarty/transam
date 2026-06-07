@@ -145,6 +145,10 @@ export function App() {
     void window.api.setZoom(zoom);
     saveJSON('zoom', zoom);
   }, [zoom]);
+  // A label stamped on every torrent added from this client, so family members
+  // can tell their own torrents apart. Highlighted gold in the list (it's mine).
+  const [personalLabel, setPersonalLabel] = useState<string>(() => loadJSON('personalLabel', ''));
+  useEffect(() => saveJSON('personalLabel', personalLabel), [personalLabel]);
   const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
 
   // OS opened a magnet link or .torrent file with us → open the Add dialog.
@@ -480,6 +484,7 @@ export function App() {
             busy={busy}
             scrollToId={ids.length === 1 ? ids[0] : undefined}
             globalRatio={globalRatio}
+            personalLabel={personalLabel}
             onContext={(x, y) => setMenu({ x, y })}
           />
           <Splitter
@@ -515,6 +520,8 @@ export function App() {
           labelRules={labelRules}
           onLabelRules={setLabelRules}
           onRunLabelRules={runLabelRules}
+          personalLabel={personalLabel}
+          onPersonalLabel={setPersonalLabel}
           onClose={() => setShowPrefs(false)}
         />
       )}
@@ -555,11 +562,13 @@ export function App() {
             setAddPrefill(null);
           }}
           onAdd={async (opts) => {
+            const mine = personalLabel.trim();
             const r = await window.api.add({
               url: opts.url,
               metainfo: opts.metainfo,
               downloadDir: opts.downloadDir,
               paused: opts.paused,
+              labels: mine ? [mine] : undefined,
             });
             if (!r.ok) throw new Error(r.result);
             recordDir(opts.downloadDir);

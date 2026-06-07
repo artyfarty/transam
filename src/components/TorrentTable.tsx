@@ -33,16 +33,24 @@ const columns: ColumnDef<Torrent>[] = [
     header: 'Name',
     size: 360,
     enableHiding: false,
-    cell: ({ row }) => (
-      <>
-        <span className="ellip">{row.original.name}</span>
-        {row.original.labels?.map((l) => (
-          <span key={l} className="tag-chip" title={l} style={{ background: labelColor(l) }}>
-            {l}
-          </span>
-        ))}
-      </>
-    ),
+    cell: ({ row, table }) => {
+      const mine = (table.options.meta as TableMeta).personalLabel;
+      return (
+        <>
+          <span className="ellip">{row.original.name}</span>
+          {row.original.labels?.map((l) => (
+            <span
+              key={l}
+              className={`tag-chip ${mine && l === mine ? 'personal' : ''}`}
+              title={mine && l === mine ? `${l} (your personal label)` : l}
+              style={{ background: labelColor(l) }}
+            >
+              {l}
+            </span>
+          ))}
+        </>
+      );
+    },
   },
   {
     id: 'size',
@@ -111,14 +119,16 @@ interface Props {
   busy: Set<number>;
   scrollToId?: number;
   globalRatio: { enabled: boolean; limit: number };
+  personalLabel: string;
   onContext: (x: number, y: number) => void;
 }
 
 interface TableMeta {
   globalRatio: { enabled: boolean; limit: number };
+  personalLabel: string;
 }
 
-export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, scrollToId, globalRatio, onContext }: Props) {
+export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy, scrollToId, globalRatio, personalLabel, onContext }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
@@ -139,7 +149,7 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
     enableColumnResizing: true,
     getCoreRowModel: getCoreRowModel(),
     defaultColumn: { minSize: 44 },
-    meta: { globalRatio } satisfies TableMeta,
+    meta: { globalRatio, personalLabel } satisfies TableMeta,
   });
 
   const rows = table.getRowModel().rows;

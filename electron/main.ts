@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, Tray } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -12,6 +12,8 @@ import { importProfiles } from './importTransgui';
 let win: BrowserWindow | null = null;
 let client: TransmissionClient | null = null;
 let pendingOpen: OpenAddPayload[] = [];
+let tray: Tray | null = null;
+let minimizeToTray = false;
 
 // --- local config (kept in userData, never in the repo) ---------------------
 function configPath(): string {
@@ -26,6 +28,60 @@ function loadConfig(): ServerConfig | null {
 }
 function saveConfig(cfg: ServerConfig): void {
   fs.writeFileSync(configPath(), JSON.stringify(cfg, null, 2), 'utf8');
+}
+
+// --- app prefs that the main process owns (tray; autostart is the OS login item) ---
+interface MainPrefs {
+  minimizeToTray: boolean;
+}
+function prefsPath(): string {
+  return path.join(app.getPath('userData'), 'prefs.json');
+}
+function loadPrefs(): MainPrefs {
+  try {
+    return { minimizeToTray: false, ...(JSON.parse(fs.readFileSync(prefsPath(), 'utf8')) as Partial<MainPrefs>) };
+  } catch {
+    return { minimizeToTray: false };
+  }
+}
+function savePrefs(p: MainPrefs): void {
+  fs.writeFileSync(prefsPath(), JSON.stringify(p, null, 2), 'utf8');
+}
+
+// --- system tray (only present while "minimize to tray" is on) ---------------
+function trayIcon(): string {
+  return path.join(__dirname, '../../dist/icon.png');
+}
+function showWindow(): void {
+  if (!win) return;
+  if (win.isMinimized()) win.restore();
+  win.show();
+  win.focus();
+}
+function ensureTray(): void {
+  if (tray) return;
+  tray = new Tray(trayIcon());
+  tray.setToolTip('Transam');
+  tray.on('click', showWindow);
+  tray.setContextMenu(
+    Menu.buildFromTemplate([
+      { label: 'Show Transam', click: showWindow },
+      { type: 'separator' },
+      { label: 'Quit', click: () => app.quit() },
+    ]),
+  );
+}
+function destroyTray(): void {
+  tray?.destroy();
+  tray = null;
+}
+function applyMinimizeToTray(enabled: boolean): void {
+  minimizeToTray = enabled;
+  if (enabled) ensureTray();
+  else {
+    destroyTray();
+    if (win && !win.isVisible()) showWindow(); // don't strand a hidden window
+  }
 }
 
 // --- path mapping (local mounted path <-> daemon path) ----------------------
@@ -95,6 +151,22 @@ function registerIpc(): void {
   ipcMain.handle('config:importTransgui', (_e, explicitPath?: string) =>
     importProfiles(transguiSearchDirs(), explicitPath),
   );
+
+  ipcMain.handle('app:getPrefs', () => ({
+    openAtLogin: app.getLoginItemSettings().openAtLogin,
+    minimizeToTray,
+  }));
+
+  ipcMain.handle('app:setAutostart', (_e, enabled: boolean) => {
+    app.setLoginItemSettings({ openAtLogin: enabled });
+    return app.getLoginItemSettings().openAtLogin;
+  });
+
+  ipcMain.handle('app:setMinimizeToTray', (_e, enabled: boolean) => {
+    savePrefs({ minimizeToTray: enabled });
+    applyMinimizeToTray(enabled);
+    return enabled;
+  });
 
   ipcMain.handle('dialog:pickImportFile', async (): Promise<string | null> => {
     const r = await dialog.showOpenDialog({
@@ -180,13 +252,17 @@ function registerIpc(): void {
 
   ipcMain.handle(
     'torrents:add',
-    async (_e, opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean }): Promise<RpcResult> => {
+    async (
+      _e,
+      opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean; labels?: string[] },
+    ): Promise<RpcResult> => {
       const c = ensureClient();
       const args: Record<string, unknown> = {};
       if (opts.url) args.filename = opts.url;
       if (opts.metainfo) args.metainfo = opts.metainfo;
       if (opts.downloadDir) args['download-dir'] = opts.downloadDir;
       if (opts.paused != null) args.paused = opts.paused;
+      if (opts.labels?.length) args.labels = opts.labels;
       return c.call('torrent-add', args);
     },
   );
@@ -383,6 +459,15 @@ function createWindow(): void {
     for (const p of queued) win?.webContents.send('open-add', p);
   });
 
+  // Minimize-to-tray: when enabled, a minimize hides the window (off the
+  // taskbar) and leaves only the tray icon; clicking the tray restores it.
+  win.on('minimize', () => {
+    if (minimizeToTray) {
+      ensureTray();
+      win?.hide();
+    }
+  });
+
   win.on('close', saveWinState);
   win.on('closed', () => {
     win = null;
@@ -412,6 +497,7 @@ if (!app.requestSingleInstanceLock()) {
     registerIpc();
     buildMenu();
     createWindow();
+    applyMinimizeToTray(loadPrefs().minimizeToTray); // restore the tray setting
     handleArgv(process.argv);
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
