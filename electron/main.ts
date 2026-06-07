@@ -1,5 +1,4 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from 'electron';
-import type { MenuItemConstructorOptions } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -278,48 +277,9 @@ function handleArgv(argv: string[]): void {
   }
 }
 
-// --- application menu -------------------------------------------------------
-function send(action: string): void {
-  win?.webContents.send('menu-action', action);
-}
-
+// The menu lives in the renderer's toolbar row, so drop the native menu bar.
 function buildMenu(): void {
-  const isMac = process.platform === 'darwin';
-  const template: MenuItemConstructorOptions[] = [
-    ...(isMac ? [{ role: 'appMenu' as const }] : []),
-    {
-      label: 'File',
-      submenu: [
-        { label: 'Add Torrent / Magnet…', accelerator: 'CmdOrCtrl+N', click: () => send('add') },
-        { type: 'separator' },
-        { label: 'Connection Settings…', click: () => send('settings') },
-        { type: 'separator' },
-        isMac ? { role: 'close' } : { role: 'quit' },
-      ],
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { label: 'Start', click: () => send('start') },
-        { label: 'Start Now', click: () => send('start-now') },
-        { label: 'Pause', click: () => send('stop') },
-        { type: 'separator' },
-        { label: 'Verify', click: () => send('verify') },
-        { label: 'Reannounce', click: () => send('reannounce') },
-        { label: 'Set Location…', click: () => send('relocate') },
-        { type: 'separator' },
-        { label: 'Remove', click: () => send('remove') },
-        { label: 'Remove + Delete Data', click: () => send('remove-data') },
-        { type: 'separator' },
-        { label: 'Client Preferences…', click: () => send('preferences') },
-      ],
-    },
-    {
-      label: 'Help',
-      submenu: [{ label: 'About Transam', click: () => send('about') }],
-    },
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+  Menu.setApplicationMenu(null);
 }
 
 // --- window state persistence ----------------------------------------------

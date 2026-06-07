@@ -1,4 +1,5 @@
 import { UiIcon } from './UiIcon';
+import { MenuBar } from './MenuBar';
 
 interface Props {
   selectionCount: number;
@@ -9,6 +10,7 @@ interface Props {
   onPause: () => void;
   onRemove: () => void;
   onSettings: () => void;
+  onAction: (action: string) => void;
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
@@ -17,6 +19,8 @@ export function Toolbar(p: Props) {
   const none = p.selectionCount === 0;
   return (
     <div className="toolbar">
+      <MenuBar onAction={p.onAction} />
+      <span className="sep" />
       <button
         className={`icon-only ${p.sidebarOpen ? 'active' : ''}`}
         onClick={p.onToggleSidebar}

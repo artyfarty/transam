@@ -266,6 +266,7 @@ export function App() {
     else if (a === 'about') setShowAbout(true);
     else if (a === 'preferences') setShowPrefs(true);
     else if (a === 'relocate') relocate();
+    else if (a === 'quit') window.close();
     else act(a);
   };
   const onMenuRef = useRef(onMenu);
@@ -373,6 +374,7 @@ export function App() {
         onPause={() => act('stop')}
         onRemove={() => act('remove')}
         onSettings={() => setShowConnect(true)}
+        onAction={onMenu}
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />

@@ -832,6 +832,46 @@ table.files select {
   margin: 4px 2px;
 }
 
+/* ---- in-toolbar menu bar ---- */
+.menubar {
+  display: flex;
+  align-items: center;
+}
+.menu-root {
+  position: relative;
+}
+.menu-label {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.menu-label:hover,
+.menu-label.on {
+  background: var(--hover);
+}
+.menu-back {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+}
+.menu-drop {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 2px;
+  z-index: 20;
+  min-width: 210px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 6px 24px #0008;
+}
+
 /* ---- modal ---- */
 .modal-back {
   position: fixed;
