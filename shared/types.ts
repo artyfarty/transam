@@ -189,6 +189,18 @@ export interface OpenAddPayload {
   name?: string;
 }
 
+/** A pre-add preview parsed from a magnet link or .torrent (file or URL). */
+export interface TorrentPreview {
+  kind: 'magnet' | 'metainfo';
+  name: string;
+  hash?: string;
+  totalSize?: number;
+  files?: { name: string; length: number }[];
+  trackers?: string[];
+  /** what to hand to torrent-add */
+  source: { url?: string; metainfo?: string };
+}
+
 /** Connection state pushed to the renderer. */
 export interface ConnectionState {
   connected: boolean;

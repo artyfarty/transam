@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { ServerConfig, RpcResult, OpenAddPayload } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
@@ -22,6 +22,9 @@ const api = {
     ipcRenderer.invoke('torrents:add', opts),
   pickFolder: (): Promise<{ local: string; remote: string } | null> =>
     ipcRenderer.invoke('dialog:pickFolder'),
+  pickTorrent: (): Promise<{ metainfo: string; name: string } | null> => ipcRenderer.invoke('dialog:pickTorrent'),
+  parseTorrent: (input: { url?: string; metainfo?: string }): Promise<TorrentPreview | { error: string }> =>
+    ipcRenderer.invoke('add:parse', input),
   openPath: (daemonPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', daemonPath),
   showItem: (daemonPath: string): Promise<void> => ipcRenderer.invoke('shell:showItem', daemonPath),
   associate: (): Promise<string> => ipcRenderer.invoke('app:associate'),

@@ -6,7 +6,8 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { TransmissionClient } from './transmission';
 import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
-import type { ServerConfig, RpcResult, OpenAddPayload } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
+import { parseTorrentFile } from './bencode';
 
 let win: BrowserWindow | null = null;
 let client: TransmissionClient | null = null;
@@ -192,6 +193,49 @@ function registerIpc(): void {
     }
     return out.join('\n');
   });
+
+  // Pick a local .torrent file → base64 metainfo for the add preview.
+  ipcMain.handle('dialog:pickTorrent', async (): Promise<{ metainfo: string; name: string } | null> => {
+    if (!win) return null;
+    const r = await dialog.showOpenDialog(win, {
+      properties: ['openFile'],
+      filters: [{ name: 'Torrent', extensions: ['torrent'] }],
+    });
+    if (r.canceled || !r.filePaths[0]) return null;
+    const file = r.filePaths[0];
+    return { metainfo: fs.readFileSync(file).toString('base64'), name: path.basename(file) };
+  });
+
+  // Parse a magnet/.torrent (file or URL) into a preview, without adding it.
+  ipcMain.handle(
+    'add:parse',
+    async (_e, input: { url?: string; metainfo?: string }): Promise<TorrentPreview | { error: string }> => {
+      try {
+        if (input.metainfo) {
+          const p = parseTorrentFile(input.metainfo);
+          return { kind: 'metainfo', name: p.name, totalSize: p.totalSize, files: p.files, source: { metainfo: input.metainfo } };
+        }
+        const url = (input.url ?? '').trim();
+        if (/^magnet:/i.test(url)) {
+          const u = new URL(url);
+          const xt = u.searchParams.get('xt') ?? '';
+          const hash = xt.replace(/^urn:btih:/i, '') || undefined;
+          const name = u.searchParams.get('dn') || hash || 'magnet';
+          return { kind: 'magnet', name, hash, trackers: u.searchParams.getAll('tr'), source: { url } };
+        }
+        if (/^https?:\/\//i.test(url)) {
+          const res = await fetch(url, { signal: AbortSignal.timeout(20000) });
+          if (!res.ok) return { error: `HTTP ${res.status}` };
+          const b64 = Buffer.from(await res.arrayBuffer()).toString('base64');
+          const p = parseTorrentFile(b64);
+          return { kind: 'metainfo', name: p.name, totalSize: p.totalSize, files: p.files, source: { metainfo: b64 } };
+        }
+        return { error: 'Unrecognized link (expected a magnet: or http(s) .torrent)' };
+      } catch (e) {
+        return { error: (e as Error).message };
+      }
+    },
+  );
 
   // Native folder picker that maps the chosen local path to the daemon path.
   ipcMain.handle('dialog:pickFolder', async (): Promise<{ local: string; remote: string } | null> => {

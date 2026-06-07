@@ -954,6 +954,84 @@ table.files select {
   white-space: pre-wrap;
   user-select: text;
 }
+
+/* add wizard */
+.modal.add {
+  width: 460px;
+}
+.modal.add .or {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 11px;
+  margin: 10px 0;
+}
+.file-btn {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  padding: 9px;
+  cursor: pointer;
+  font: inherit;
+}
+.file-btn:hover {
+  border-color: var(--accent);
+}
+.prev-name {
+  font-size: 14px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+.prev-meta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  margin: 4px 0 10px;
+}
+.prev-meta .tag {
+  background: var(--accent-dim);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+.prev-files {
+  max-height: 160px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  background: var(--bg-input);
+}
+.prev-file {
+  display: flex;
+  gap: 10px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  align-items: center;
+}
+.prev-file .ellip {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.prev-file .num {
+  font: var(--mono);
+  color: var(--text-dim);
+}
+.prev-file.dim {
+  color: var(--text-dim);
+  justify-content: center;
+}
 .modal .err {
   color: var(--error);
   font-size: 11px;
