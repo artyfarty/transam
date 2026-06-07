@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload, SpeedLimits } from '../shared/types';
 import { Toolbar } from './components/Toolbar';
 import { TorrentTable } from './components/TorrentTable';
@@ -26,13 +26,27 @@ export function App() {
   const [sort, setSort] = useState<SortState>(() => loadJSON<SortState>('sort', { key: 'queue', dir: 'asc' }));
   useEffect(() => saveJSON('filter', filter), [filter]);
   useEffect(() => saveJSON('sort', sort), [sort]);
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
   const [sidebarW, setSidebarW] = useState<number>(() => loadJSON('sidebarW', 168));
-  const [detailsH, setDetailsH] = useState<number>(() => loadJSON('detailsH', 200));
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(() => loadJSON('sidebarOpen', true));
   useEffect(() => saveJSON('sidebarW', sidebarW), [sidebarW]);
-  useEffect(() => saveJSON('detailsH', detailsH), [detailsH]);
   useEffect(() => saveJSON('sidebarOpen', sidebarOpen), [sidebarOpen]);
-  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+  // Details pane height is stored as a fraction of the main column so the
+  // top/bottom split scales smoothly when the window is maximized/restored.
+  const mainRef = useRef<HTMLDivElement>(null);
+  const [mainH, setMainH] = useState(560);
+  useLayoutEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setMainH(el.clientHeight));
+    ro.observe(el);
+    setMainH(el.clientHeight);
+    return () => ro.disconnect();
+  }, []);
+  const [detailsFrac, setDetailsFrac] = useState<number>(() => loadJSON('detailsFrac', 0.3));
+  useEffect(() => saveJSON('detailsFrac', detailsFrac), [detailsFrac]);
+  const detailsH = Math.round(clamp(mainH * detailsFrac, 110, Math.max(140, mainH - 160)));
   const [down, setDown] = useState(0);
   const [up, setUp] = useState(0);
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
@@ -253,7 +267,7 @@ export function App() {
             <Splitter orientation="v" onDrag={(d) => setSidebarW((w) => clamp(w + d, 120, 420))} />
           </>
         )}
-        <div className="main">
+        <div className="main" ref={mainRef}>
           <TorrentTable
             torrents={filtered}
             selected={selected}
@@ -262,7 +276,10 @@ export function App() {
             onSort={onSort}
             onContext={(x, y) => setMenu({ x, y })}
           />
-          <Splitter orientation="h" onDrag={(d) => setDetailsH((h) => clamp(h - d, 90, 480))} />
+          <Splitter
+            orientation="h"
+            onDrag={(d) => setDetailsFrac((f) => clamp(f - d / Math.max(1, mainH), 0.12, 0.7))}
+          />
           <DetailsPane
             torrent={selectedTorrent}
             detail={selId === detail?.id ? detail : null}

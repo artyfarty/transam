@@ -201,11 +201,45 @@ function handleArgv(argv: string[]): void {
   }
 }
 
+// --- window state persistence ----------------------------------------------
+interface WinState {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  maximized: boolean;
+}
+function winStatePath(): string {
+  return path.join(app.getPath('userData'), 'window.json');
+}
+function loadWinState(): WinState | null {
+  try {
+    return JSON.parse(fs.readFileSync(winStatePath(), 'utf8')) as WinState;
+  } catch {
+    return null;
+  }
+}
+function saveWinState(): void {
+  if (!win) return;
+  const b = win.getNormalBounds();
+  try {
+    fs.writeFileSync(
+      winStatePath(),
+      JSON.stringify({ x: b.x, y: b.y, width: b.width, height: b.height, maximized: win.isMaximized() }),
+    );
+  } catch {
+    /* ignore */
+  }
+}
+
 // --- window -----------------------------------------------------------------
 function createWindow(): void {
+  const ws = loadWinState();
   win = new BrowserWindow({
-    width: 1180,
-    height: 720,
+    width: ws?.width ?? 1180,
+    height: ws?.height ?? 720,
+    x: ws?.x,
+    y: ws?.y,
     minWidth: 760,
     minHeight: 420,
     backgroundColor: '#1b1d22',
@@ -216,6 +250,7 @@ function createWindow(): void {
       nodeIntegration: false,
     },
   });
+  if (ws?.maximized) win.maximize();
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
@@ -230,6 +265,7 @@ function createWindow(): void {
     for (const p of queued) win?.webContents.send('open-add', p);
   });
 
+  win.on('close', saveWinState);
   win.on('closed', () => {
     win = null;
   });

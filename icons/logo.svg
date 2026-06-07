@@ -1,0 +1,52 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transam logo">
+  <title>Transam</title>
+  <defs>
+    <radialGradient id="taCore" cx="50%" cy="42%" r="62%">
+      <stop offset="0%" stop-color="#c6fff0"/>
+      <stop offset="34%" stop-color="#43e3a3"/>
+      <stop offset="100%" stop-color="#188a64"/>
+    </radialGradient>
+    <linearGradient id="taBladeR" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f1f6fc"/>
+      <stop offset="55%" stop-color="#bcd2ec"/>
+      <stop offset="100%" stop-color="#7ea6cf"/>
+    </linearGradient>
+    <linearGradient id="taRing" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7fbcf2"/>
+      <stop offset="100%" stop-color="#2f568a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- top crest spike -->
+  <path d="M128 16 L137 50 L128 66 L119 50 Z" fill="url(#taBladeR)"/>
+  <path d="M128 24 L132 49 L128 60 L124 49 Z" fill="#43e3a3" opacity="0.55"/>
+
+  <!-- wing blades (right, then mirrored) -->
+  <g>
+    <path d="M134 116 L230 58 L208 96 L150 130 Z" fill="url(#taBladeR)"/>
+    <path d="M138 134 L210 102 L196 132 L150 152 Z" fill="url(#taBladeR)" opacity="0.9"/>
+    <path d="M230 58 L208 96 L214 84 Z" fill="#43e3a3" opacity="0.7"/>
+  </g>
+  <g transform="translate(256,0) scale(-1,1)">
+    <path d="M134 116 L230 58 L208 96 L150 130 Z" fill="url(#taBladeR)"/>
+    <path d="M138 134 L210 102 L196 132 L150 152 Z" fill="url(#taBladeR)" opacity="0.9"/>
+    <path d="M230 58 L208 96 L214 84 Z" fill="#43e3a3" opacity="0.7"/>
+  </g>
+
+  <!-- tilted orbital ring -->
+  <g transform="rotate(-24 128 130)">
+    <ellipse cx="128" cy="130" rx="70" ry="29" fill="none" stroke="url(#taRing)" stroke-width="5"/>
+    <ellipse cx="128" cy="130" rx="70" ry="29" fill="none" stroke="#9fd2ff" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <!-- GN drive core -->
+  <circle cx="128" cy="130" r="37" fill="#10221c"/>
+  <circle cx="128" cy="130" r="34" fill="url(#taCore)"/>
+  <circle cx="128" cy="130" r="34" fill="none" stroke="#d8fff0" stroke-width="1.2" opacity="0.45"/>
+
+  <!-- transmission glyph: up (out) + down (in) -->
+  <g stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M117 148 L117 113 M108 124 L117 111 L126 124" stroke="#eafff7" stroke-width="4"/>
+    <path d="M139 112 L139 147 M130 136 L139 149 L148 136" stroke="#0d3a2b" stroke-width="4"/>
+  </g>
+</svg>

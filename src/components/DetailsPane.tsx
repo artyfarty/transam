@@ -68,7 +68,7 @@ function General({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail | null; onR
         </div>
       </div>
 
-      <div className={`bar big ${done ? 'done' : t.status === 0 ? 'paused' : ''}`}>
+      <div className={`bar big ${t.error ? 'error' : done ? 'done' : t.status === 0 ? 'paused' : ''}`}>
         <i style={{ width: `${Math.min(100, t.percentDone * 100)}%` }} />
         <span>
           {percent(t.percentDone)}

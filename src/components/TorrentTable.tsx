@@ -39,7 +39,7 @@ const columns: ColumnDef<Torrent>[] = [
     size: 120,
     cell: ({ row }) => {
       const t = row.original;
-      const cls = t.status === TorrentStatus.Stopped ? 'paused' : t.percentDone >= 1 ? 'done' : '';
+      const cls = t.error ? 'error' : t.status === TorrentStatus.Stopped ? 'paused' : t.percentDone >= 1 ? 'done' : '';
       return (
         <div className={`bar ${cls}`}>
           <i style={{ width: `${Math.min(100, t.percentDone * 100)}%` }} />
