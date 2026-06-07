@@ -1,7 +1,8 @@
 # Transam
 
 A fast, dark, modern desktop remote for **Transmission 4.x** — a replacement for
-Transmission Remote GUI, with native OS integration. English-only.
+Transmission Remote GUI, with native OS integration. Dark theme by default, with
+a light theme available. English-only UI.
 
 ## Features
 
@@ -27,8 +28,8 @@ Transmission Remote GUI, with native OS integration. English-only.
   Explorer*) on the mapped network drive.
 - **Save where it lives on the server** — pick the destination through a native
   folder dialog on your mounted share; Transam maps it to the daemon's path.
-- **Preferences** — light/dark theme, interface **scale** (for bigger text),
-  label rules, register file associations.
+- **Preferences** — theme (**dark by default, light available**), interface
+  **scale** (for bigger text), label rules, register file associations.
 - **Stays responsive** — never freezes waiting on the server: it reconnects on
   its own, shows errors as toasts, and animates a row while its action is in
   flight. Remembers your layout (columns, panels, sort, window size) and shows
