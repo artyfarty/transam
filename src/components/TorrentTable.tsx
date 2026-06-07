@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   type ColumnDef,
   type ColumnSizingState,
+  type VisibilityState,
   flexRender,
   getCoreRowModel,
   useReactTable,
@@ -24,9 +25,10 @@ const columns: ColumnDef<Torrent>[] = [
     minSize: 28,
     maxSize: 28,
     enableResizing: false,
+    enableHiding: false,
     cell: ({ row }) => <StatusIcon t={row.original} />,
   },
-  { id: 'name', header: 'Name', size: 360, cell: ({ row }) => <span className="ellip">{row.original.name}</span> },
+  { id: 'name', header: 'Name', size: 360, enableHiding: false, cell: ({ row }) => <span className="ellip">{row.original.name}</span> },
   {
     id: 'size',
     header: 'Size',
@@ -95,12 +97,16 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
 
   const [colSizing, setColSizing] = useState<ColumnSizingState>(() => loadJSON<ColumnSizingState>('colSizing', {}));
   useEffect(() => saveJSON('colSizing', colSizing), [colSizing]);
+  const [colVis, setColVis] = useState<VisibilityState>(() => loadJSON<VisibilityState>('colVisibility', {}));
+  useEffect(() => saveJSON('colVisibility', colVis), [colVis]);
+  const [colMenu, setColMenu] = useState<{ x: number; y: number } | null>(null);
 
   const table = useReactTable({
     data: torrents,
     columns,
-    state: { columnSizing: colSizing },
+    state: { columnSizing: colSizing, columnVisibility: colVis },
     onColumnSizingChange: setColSizing,
+    onColumnVisibilityChange: setColVis,
     columnResizeMode: 'onChange',
     enableColumnResizing: true,
     getCoreRowModel: getCoreRowModel(),
@@ -155,7 +161,14 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
 
   return (
     <div className="table">
-      <div className="thead-wrap" ref={headRef}>
+      <div
+        className="thead-wrap"
+        ref={headRef}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setColMenu({ x: e.clientX, y: e.clientY });
+        }}
+      >
         <div className="thead" style={{ width: totalWidth }}>
           {table.getHeaderGroups()[0].headers.map((header) => {
             const sortKey = colSortKey[header.column.id] ?? header.column.id;
@@ -218,6 +231,24 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
           })}
         </div>
       </div>
+
+      {colMenu && (
+        <>
+          <div className="ctx-back" onMouseDown={() => setColMenu(null)} onContextMenu={(e) => e.preventDefault()} />
+          <div className="ctx col-picker" style={{ left: colMenu.x, top: colMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
+            <div className="col-picker-head">Columns</div>
+            {table
+              .getAllLeafColumns()
+              .filter((c) => c.getCanHide())
+              .map((c) => (
+                <label key={c.id} className="ctx-item check">
+                  <input type="checkbox" checked={c.getIsVisible()} onChange={c.getToggleVisibilityHandler()} />
+                  <span>{String(c.columnDef.header)}</span>
+                </label>
+              ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

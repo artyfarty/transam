@@ -844,6 +844,21 @@ table.files select {
   background: var(--border);
   margin: 4px 2px;
 }
+.col-picker-head {
+  padding: 4px 12px 6px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.ctx-item.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ctx-item.check input {
+  margin: 0;
+}
 
 /* ---- in-toolbar menu bar ---- */
 .menubar {
