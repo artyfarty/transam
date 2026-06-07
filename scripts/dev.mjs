@@ -49,8 +49,10 @@ await new Promise((resolve, reject) => {
 run(bin('vite'), []);
 await waitForPort(PORT);
 
-// 3) launch electron
-const electron = run(bin('electron'), ['.'], {
+// 3) launch electron.
+// --disable-gpu / --no-sandbox keep it happy under WSLg, whose GL stack
+// otherwise crashes the GPU process. Harmless on a normal desktop in dev.
+const electron = run(bin('electron'), ['.', '--disable-gpu', '--no-sandbox'], {
   env: { ...process.env, VITE_DEV_SERVER_URL: `http://localhost:${PORT}` },
 });
 electron.on('exit', () => { cleanup(); process.exit(0); });
