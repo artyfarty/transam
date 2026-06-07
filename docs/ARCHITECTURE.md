@@ -87,7 +87,14 @@ user edits the destination.
 ## Packaging
 
 `electron-builder` (`pnpm dist`) targets NSIS/AppImage with `build/icon.ico`.
-Building a Windows installer on Linux needs wine. As a wine-free alternative,
-the native window/taskbar build is assembled by dropping `dist/` + `dist-electron/`
-+ `package.json` into `resources/app/` of an extracted Electron Windows prebuilt
-(the renderer is bundled and the main process has no third-party runtime deps).
+Building a Windows installer on Linux needs wine.
+
+As a wine-free alternative, the native window/taskbar build is assembled by
+dropping `dist/` + `dist-electron/` + `package.json` into `resources/app/` of an
+extracted Electron Windows prebuilt (the renderer is bundled and the main
+process has no third-party runtime deps), renaming `electron.exe` →
+`Transam.exe`. The exe's icon and version metadata (otherwise Electron's
+defaults) are patched with `rcedit` (a native Windows tool, no wine):
+`rcedit Transam.exe --set-icon icon.ico --set-version-string ProductName Transam …`.
+Iterating only needs the `resources/app/` payload refreshed; a full prebuilt
+copy needs the rename + rcedit re-applied. Deploy target: `C:\Progs\Transam`.
