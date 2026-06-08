@@ -1,8 +1,14 @@
-# Transam
+<p align="center">
+  <img src="icons/logo.svg" alt="Transam" width="120" height="120">
+</p>
 
-A fast, dark, modern desktop remote for **Transmission 4.x** — a replacement for
-Transmission Remote GUI, with native OS integration. Dark theme by default, with
-a light theme available. English-only UI.
+<h1 align="center">Transam</h1>
+
+<p align="center">
+  A fast, dark, modern desktop remote for <b>Transmission 4.x</b> — a replacement
+  for Transmission Remote GUI, with native OS integration.<br>
+  Dark theme by default, with a light theme available. English-only UI.
+</p>
 
 ![Transam](docs/screenshot.png)
 
