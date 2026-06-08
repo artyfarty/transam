@@ -10,6 +10,10 @@
   Dark theme by default, with a light theme available. English-only UI.
 </p>
 
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="License: GPL-3.0"></a>
+</p>
+
 ![Transam](docs/screenshot.png)
 
 <sub>Screenshot uses fictional demo data (`TRANSAM_DEMO=1`).</sub>
@@ -104,3 +108,8 @@ A native Windows build can also be assembled without wine — see
 
 Dependencies are pinned to specific, well-aged versions; `.npmrc` sets
 `minimum-release-age` to refuse very fresh publishes.
+
+## License
+
+[GNU General Public License v3.0](LICENSE) (or later). You may use, study, share,
+and modify it; derivative works must stay under the GPL.

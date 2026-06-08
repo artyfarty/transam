@@ -2,6 +2,7 @@
   "name": "transam",
   "version": "0.1.0",
   "description": "A fast, dark, modern desktop remote for Transmission 4.x",
+  "license": "GPL-3.0-or-later",
   "private": true,
   "main": "dist-electron/electron/main.js",
   "scripts": {

@@ -1022,6 +1022,11 @@ table.files select {
   font-size: 12.5px;
   margin: 6px 0 0;
 }
+.about-license {
+  color: var(--text-dim);
+  font-size: 11px;
+  margin-top: 8px;
+}
 .modal.about .actions {
   justify-content: center;
 }
