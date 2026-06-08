@@ -8,6 +8,7 @@ import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
 import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
 import { parseTorrentFile } from './bencode';
 import { importProfiles } from './importTransgui';
+import { DEMO, demoConfig, demoHandle } from './demo';
 
 let win: BrowserWindow | null = null;
 let client: TransmissionClient | null = null;
@@ -133,7 +134,7 @@ function ensureClient(): TransmissionClient {
 
 // --- IPC --------------------------------------------------------------------
 function registerIpc(): void {
-  ipcMain.handle('config:get', () => loadConfig());
+  ipcMain.handle('config:get', () => (DEMO ? demoConfig() : loadConfig()));
 
   ipcMain.handle('config:set', (_e, cfg: ServerConfig) => {
     saveConfig(cfg);
@@ -181,6 +182,7 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('rpc:test', async (): Promise<RpcResult> => {
+    if (DEMO) return demoHandle('session:get');
     try {
       const c = ensureClient();
       return await c.call('session-get', { fields: ['rpc-version', 'version'] });
@@ -190,6 +192,7 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('torrents:get', async (_e, ids?: number[]): Promise<RpcResult> => {
+    if (DEMO) return demoHandle('torrents:get');
     const c = ensureClient();
     const args: Record<string, unknown> = { fields: TORRENT_FIELDS };
     if (ids && ids.length) args.ids = ids;
@@ -197,10 +200,12 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('session:stats', async (): Promise<RpcResult> => {
+    if (DEMO) return demoHandle('session:stats');
     return ensureClient().call('session-stats');
   });
 
   ipcMain.handle('session:get', async (_e, fields?: string[]): Promise<RpcResult> => {
+    if (DEMO) return demoHandle('session:get');
     return ensureClient().call('session-get', fields ? { fields } : {});
   });
 
@@ -213,6 +218,7 @@ function registerIpc(): void {
   });
 
   ipcMain.handle('torrents:detail', async (_e, id: number): Promise<RpcResult> => {
+    if (DEMO) return demoHandle('torrents:detail', id);
     return ensureClient().call('torrent-get', { ids: [id], fields: DETAIL_FIELDS });
   });
 
@@ -425,6 +431,34 @@ function saveWinState(): void {
   }
 }
 
+// Screenshot driver (TRANSAM_SHOT=<png path>): seed a personal label so the
+// gold chip shows, let the demo data populate, select a row to fill the details
+// pane, then capture the page and quit. Used only for docs screenshots.
+function captureScreenshot(w: BrowserWindow): void {
+  const out = process.env.TRANSAM_SHOT!;
+  const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+  let loads = 0;
+  w.webContents.on('did-finish-load', async () => {
+    loads += 1;
+    if (loads === 1) {
+      // personalLabel "Alice" so torrents tagged Alice render in the gold frame
+      await w.webContents.executeJavaScript(
+        `localStorage.setItem('personalLabel','"Alice"');localStorage.setItem('theme','"dark"');true`,
+      );
+      w.reload();
+      return;
+    }
+    await delay(2000); // let the poll loop fetch demo torrents
+    await w.webContents.executeJavaScript(
+      `(()=>{const r=document.querySelector('.tbody .row');if(r){r.dispatchEvent(new MouseEvent('mousedown',{bubbles:true}));}return !!r;})()`,
+    );
+    await delay(1200); // let the detail fetch + render settle
+    const img = await w.webContents.capturePage();
+    fs.writeFileSync(out, img.toPNG());
+    app.quit();
+  });
+}
+
 // --- window -----------------------------------------------------------------
 function createWindow(): void {
   const ws = loadWinState();
@@ -444,7 +478,11 @@ function createWindow(): void {
       nodeIntegration: false,
     },
   });
-  if (ws?.maximized) win.maximize();
+  if (ws?.maximized && !process.env.TRANSAM_SHOT) win.maximize();
+  if (process.env.TRANSAM_SHOT) {
+    win.setSize(1320, 840);
+    win.center();
+  }
 
   const devUrl = process.env.VITE_DEV_SERVER_URL;
   if (devUrl) {
@@ -458,6 +496,8 @@ function createWindow(): void {
     pendingOpen = [];
     for (const p of queued) win?.webContents.send('open-add', p);
   });
+
+  if (process.env.TRANSAM_SHOT) captureScreenshot(win);
 
   // Minimize-to-tray: when enabled, a minimize hides the window (off the
   // taskbar) and leaves only the tray icon; clicking the tray restores it.

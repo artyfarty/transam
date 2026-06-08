@@ -4,6 +4,10 @@ A fast, dark, modern desktop remote for **Transmission 4.x** — a replacement f
 Transmission Remote GUI, with native OS integration. Dark theme by default, with
 a light theme available. English-only UI.
 
+![Transam](docs/screenshot.png)
+
+<sub>Screenshot uses fictional demo data (`TRANSAM_DEMO=1`).</sub>
+
 ## Features
 
 - **Torrent list** — a dense, uTorrent-style table: sort by any column, drag to
@@ -66,6 +70,16 @@ pnpm dev        # vite + electron; window shows on Windows via WSLg
 pnpm build      # compile main + renderer
 pnpm dist       # package with electron-builder (Windows needs wine on Linux)
 ```
+
+To regenerate the screenshot from fictional demo data (no server needed):
+
+```sh
+TRANSAM_DEMO=1 TRANSAM_SHOT=docs/screenshot.png xvfb-run -a electron .
+```
+
+`TRANSAM_DEMO=1` serves a canned set of fictional torrents in every status;
+adding `TRANSAM_SHOT=<png>` captures the window and exits. Neither is reachable
+in a normal launch.
 
 First launch shows the **Connect** dialog → enter your Transmission host, port
 (9091), and auth. Add **path mappings** there too (e.g. `Z:\downloads` →

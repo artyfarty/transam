@@ -71,7 +71,18 @@ export function isActive(t: Torrent): boolean {
 // via setDateLocale on startup); falls back to the runtime default until then.
 let _locale: string | undefined;
 export function setDateLocale(l: string): void {
-  _locale = l || undefined;
+  // Validate before storing: a bad/unsupported locale makes toLocaleString throw
+  // ("Incorrect locale information provided"), so fall back to the runtime default.
+  if (!l) {
+    _locale = undefined;
+    return;
+  }
+  try {
+    new Intl.DateTimeFormat(l);
+    _locale = l;
+  } catch {
+    _locale = undefined;
+  }
 }
 export function dateTime(ts: number): string {
   if (!ts) return '';
