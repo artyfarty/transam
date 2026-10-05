@@ -17,7 +17,7 @@ import { matchesFilter, type Filter } from './filters';
 import { sortTorrents, type SortState } from './sort';
 import { seriesKey, suggestDir } from './series';
 import { DEFAULT_LABEL_RULES, labelsForPath, type LabelRule } from './labelRules';
-import { setDateLocale } from './format';
+import { setDateLocale, REVEAL_LABEL } from './format';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
@@ -367,7 +367,7 @@ export function App() {
     { label: 'Pause', onClick: () => act('stop') },
     { separator: true },
     { label: 'Open folder', onClick: openFolder },
-    { label: 'Show in Explorer', onClick: revealItem },
+    { label: REVEAL_LABEL, onClick: revealItem },
     { label: 'Edit labels…', onClick: editLabels },
     { label: 'Verify', onClick: () => act('verify') },
     { label: 'Reannounce', onClick: () => act('reannounce') },

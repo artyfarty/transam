@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu, Tray } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, Tray, nativeImage } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -50,8 +50,10 @@ function savePrefs(p: MainPrefs): void {
 }
 
 // --- system tray (only present while "minimize to tray" is on) ---------------
-function trayIcon(): string {
-  return path.join(__dirname, '../../dist/icon.png');
+function trayIcon(): Electron.NativeImage {
+  const img = nativeImage.createFromPath(path.join(__dirname, '../../dist/icon.png'));
+  // The macOS menu bar wants a ~18pt glyph; a full-size icon would overflow it.
+  return process.platform === 'darwin' ? img.resize({ width: 18, height: 18 }) : img;
 }
 function showWindow(): void {
   if (!win) return;
@@ -367,6 +369,8 @@ function registerIpc(): void {
 
 // --- OS magnet/.torrent handoff --------------------------------------------
 function sendOpen(p: OpenAddPayload): void {
+  // macOS keeps the app alive with no window; reopen one to show the dialog.
+  if (!win && app.isReady()) createWindow();
   if (win) {
     if (win.isMinimized()) win.restore();
     win.focus();
@@ -396,8 +400,16 @@ function handleArgv(argv: string[]): void {
 }
 
 // The menu lives in the renderer's toolbar row, so drop the native menu bar.
+// macOS always has a global menu bar, and without one Cmd+Q/C/V/A stop
+// working, so keep the stock app/edit/window menus there.
 function buildMenu(): void {
-  Menu.setApplicationMenu(null);
+  if (process.platform !== 'darwin') {
+    Menu.setApplicationMenu(null);
+    return;
+  }
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([{ role: 'appMenu' }, { role: 'editMenu' }, { role: 'windowMenu' }]),
+  );
 }
 
 // --- window state persistence ----------------------------------------------

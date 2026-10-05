@@ -79,6 +79,7 @@ pnpm install
 pnpm dev        # vite + electron; window shows on Windows via WSLg
 pnpm build      # compile main + renderer
 pnpm dist       # package with electron-builder (Windows needs wine on Linux)
+pnpm dist:mac   # macOS DMGs — macOS only; CI builds them (.github/workflows/release.yml)
 ```
 
 To regenerate the screenshot from fictional demo data (no server needed):
@@ -96,6 +97,11 @@ First launch shows the **Connect** dialog → enter your Transmission host, port
 `/mnt/downloads`) so the folder picker and "open/reveal" translate Windows paths
 to daemon paths. Connection config lives in Electron `userData` (never in the
 repo, no hardcoded hosts).
+
+**macOS:** the DMGs are ad-hoc signed, not notarized, so Gatekeeper blocks the
+first launch ("damaged" / "can't be opened"). After dragging Transam to
+Applications, either allow it under *System Settings → Privacy & Security →
+Open Anyway*, or run `xattr -dr com.apple.quarantine /Applications/Transam.app`.
 
 A native Windows build can also be assembled without wine — see
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#packaging).

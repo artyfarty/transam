@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-table';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { TorrentDetail, TorrentFile, TorrentFileStat } from '../../shared/types';
-import { humanSize, percent } from '../format';
+import { humanSize, percent, IS_MAC, REVEAL_LABEL } from '../format';
 import { loadJSON, saveJSON } from '../persist';
 import { ContextMenu, type MenuItem } from './ContextMenu';
 
@@ -132,6 +132,10 @@ export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onRevea
   });
 
   function clickRow(e: React.MouseEvent, i: number) {
+    // Right/middle press (and Ctrl+click, the right-click on macOS): leave the
+    // selection alone — onContextMenu decides whether to keep a multi-selection
+    // or switch to the clicked row.
+    if (e.button !== 0 || (IS_MAC && e.ctrlKey)) return;
     if (e.shiftKey && anchor.current != null) {
       const [lo, hi] = anchor.current < i ? [anchor.current, i] : [i, anchor.current];
       const next = new Set<number>();
@@ -155,7 +159,7 @@ export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onRevea
   const menuItems: MenuItem[] = menu
     ? [
         { label: 'Open', onClick: () => onOpen(menu.row.f.name) },
-        { label: 'Show in Explorer', onClick: () => onReveal(menu.row.f.name) },
+        { label: REVEAL_LABEL, onClick: () => onReveal(menu.row.f.name) },
         { separator: true },
         { label: 'Priority: High', onClick: () => onSetPriority(targetIdx(menu.row.i), 1) },
         { label: 'Priority: Normal', onClick: () => onSetPriority(targetIdx(menu.row.i), 0) },

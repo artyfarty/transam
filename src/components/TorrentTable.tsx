@@ -10,7 +10,7 @@ import {
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { Torrent } from '../../shared/types';
 import { TorrentStatus } from '../../shared/types';
-import { humanSize, speed, percent, ratio, eta, statusText, labelColor, dateTime } from '../format';
+import { humanSize, speed, percent, ratio, eta, statusText, labelColor, dateTime, IS_MAC } from '../format';
 import { StatusIcon } from './icons';
 import { loadJSON, saveJSON } from '../persist';
 import type { SortState } from '../sort';
@@ -171,6 +171,10 @@ export function TorrentTable({ torrents, selected, onSelect, sort, onSort, busy,
   }, [scrollToId]);
 
   function clickRow(e: React.MouseEvent, t: Torrent, index: number) {
+    // Right/middle press (and Ctrl+click, the right-click on macOS): leave the
+    // selection alone — onContextMenu decides whether to keep a multi-selection
+    // or switch to the clicked row.
+    if (e.button !== 0 || (IS_MAC && e.ctrlKey)) return;
     if (e.shiftKey && anchor.current != null) {
       const [lo, hi] = anchor.current < index ? [anchor.current, index] : [index, anchor.current];
       const next = new Set<number>();

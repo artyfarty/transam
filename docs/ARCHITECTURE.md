@@ -132,12 +132,33 @@ an uninstaller, and the magnet/.torrent associations. On Linux this needs wine
 since electron-builder runs the 32-bit `rcedit` under wine to stamp the exe
 icon/metadata. Building on Windows with Node avoids wine entirely.
 
+**Releases:** pushing a `v*` tag to GitHub runs `.github/workflows/release.yml`,
+which builds the NSIS setup on `windows-latest` and the DMGs on `macos-latest`,
+then publishes them as a GitHub release (bump `version` in package.json first —
+it names the artifacts). A manual dispatch only leaves workflow artifacts.
+
+Windows labels the app by the exe's **FileDescription** (Start-menu search,
+Task Manager, "Open with"), not by `productName`. electron-builder fills it
+from package.json `description`, so `build.extraMetadata.description` pins it
+to `Transam` — otherwise the tagline shows up as the app's name.
+
+**macOS** (`pnpm dist:mac`, arm64 + x64 DMGs) can only be built on a Mac;
+`.github/workflows/release.yml` does it on a GitHub macOS runner. There's no Developer ID, so electron-builder signing is off
+(`mac.identity: null`) and `scripts/after-pack.cjs` re-seals the bundle with an
+**ad-hoc** signature — Apple Silicon refuses to run unsigned arm64 code at all.
+Gatekeeper still blocks the first launch of a downloaded copy (see README).
+`build/icon-mac.png` is the app icon at Apple's grid (824 px body on a 1024
+canvas); the `.icns` is generated from it. Mac-specific runtime bits in
+`electron/main.ts`: the stock app/edit/window menu is kept (Cmd+Q/C/V need
+it), the tray icon is downsized for the menu bar, magnet/.torrent arrive via
+`open-url`/`open-file`, and a handoff with no window open recreates it.
+
 As a wine-free alternative, the native window/taskbar build is assembled by
 dropping `dist/` + `dist-electron/` + `package.json` into `resources/app/` of an
 extracted Electron Windows prebuilt (the renderer is bundled and the main
 process has no third-party runtime deps), renaming `electron.exe` →
 `Transam.exe`. The exe's icon and version metadata (otherwise Electron's
 defaults) are patched with `rcedit` (a native Windows tool, no wine):
-`rcedit Transam.exe --set-icon icon.ico --set-version-string ProductName Transam …`.
+`rcedit Transam.exe --set-icon icon.ico --set-version-string ProductName Transam --set-version-string FileDescription Transam …`.
 Iterating only needs the `resources/app/` payload refreshed; a full prebuilt
 copy needs the rename + rcedit re-applied. Deploy target: `C:\Progs\Transam`.

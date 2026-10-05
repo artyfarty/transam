@@ -1,6 +1,6 @@
 {
   "name": "transam",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A fast, dark, modern desktop remote for Transmission 4.x",
   "license": "GPL-3.0-or-later",
   "private": true,
@@ -12,7 +12,8 @@
     "build": "pnpm build:electron && pnpm build:renderer",
     "start": "pnpm build && electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dist": "pnpm build && electron-builder --win nsis"
+    "dist": "pnpm build && electron-builder --win nsis",
+    "dist:mac": "pnpm build && electron-builder --mac"
   },
   "dependencies": {
     "@tanstack/react-table": "8.21.3",
@@ -33,6 +34,9 @@
   "build": {
     "appId": "dev.transam.app",
     "productName": "Transam",
+    "extraMetadata": {
+      "description": "Transam"
+    },
     "icon": "build/icon.ico",
     "directories": {
       "output": "release"
@@ -42,6 +46,7 @@
       "dist/**/*",
       "dist-electron/**/*"
     ],
+    "afterPack": "scripts/after-pack.cjs",
     "protocols": [
       {
         "name": "Magnet URI",
@@ -67,7 +72,25 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Transam"
+      "shortcutName": "Transam",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon-mac.png",
+      "category": "public.app-category.utilities",
+      "identity": null
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     },
     "linux": {
       "target": "AppImage",

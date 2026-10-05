@@ -4,6 +4,7 @@ import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportRes
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
+  platform: process.platform as string,
   getConfig: (): Promise<ServerConfig | null> => ipcRenderer.invoke('config:get'),
   setConfig: (cfg: ServerConfig): Promise<boolean> => ipcRenderer.invoke('config:set', cfg),
   importTransgui: (explicitPath?: string): Promise<ImportResult> =>

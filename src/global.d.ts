@@ -3,6 +3,7 @@ import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportRes
 declare global {
   interface Window {
     api: {
+      platform: string;
       getConfig(): Promise<ServerConfig | null>;
       setConfig(cfg: ServerConfig): Promise<boolean>;
       importTransgui(explicitPath?: string): Promise<ImportResult>;

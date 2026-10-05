@@ -110,3 +110,9 @@ export function labelColor(label: string): string {
   for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
   return LABEL_PALETTE[h % LABEL_PALETTE.length];
 }
+
+export const IS_MAC = window.api?.platform === 'darwin';
+
+/** The OS file manager's "reveal" wording for the current platform. */
+export const REVEAL_LABEL =
+  IS_MAC ? 'Show in Finder' : window.api?.platform === 'win32' ? 'Show in Explorer' : 'Show in folder';
