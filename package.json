@@ -12,8 +12,8 @@
     "build": "pnpm build:electron && pnpm build:renderer",
     "start": "pnpm build && electron .",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dist": "pnpm build && electron-builder --win nsis",
-    "dist:mac": "pnpm build && electron-builder --mac"
+    "dist": "pnpm build && electron-builder --win nsis --publish never",
+    "dist:mac": "pnpm build && electron-builder --mac --publish never"
   },
   "dependencies": {
     "@tanstack/react-table": "8.21.3",

@@ -134,7 +134,10 @@ icon/metadata. Building on Windows with Node avoids wine entirely.
 
 **Releases:** pushing a `v*` tag to GitHub runs `.github/workflows/release.yml`,
 which builds the NSIS setup on `windows-latest` and the DMGs on `macos-latest`,
-then publishes them as a GitHub release (bump `version` in package.json first —
+then publishes them as a GitHub release using the run's own `GITHUB_TOKEN`
+(no PAT; only that job gets `contents: write`). electron-builder runs with
+`--publish never` — on a tag it would otherwise try to publish by itself and
+fail without a token (bump `version` in package.json first —
 it names the artifacts). A manual dispatch only leaves workflow artifacts.
 
 Windows labels the app by the exe's **FileDescription** (Start-menu search,
