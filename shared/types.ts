@@ -237,3 +237,22 @@ export interface ConnectionState {
   serverVersion?: string;
   error?: string;
 }
+
+/** Outcome of opening / revealing a daemon path on this machine. */
+export type OpenPathResult =
+  | { ok: true }
+  | {
+      ok: false;
+      /** unmapped: no path mapping covers it; missing: mapped but not on disk; failed: the OS refused. */
+      reason: 'unmapped' | 'missing' | 'failed';
+      daemonPath: string;
+      localPath?: string;
+      message?: string;
+    };
+
+/** A newer release found on GitHub (null from the check = up to date / skipped). */
+export interface UpdateInfo {
+  current: string;
+  latest: string;
+  url: string;
+}

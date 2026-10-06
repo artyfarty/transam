@@ -45,7 +45,9 @@ view that issues intents over IPC.
 | `session:stats` / `session:get` / `session:set` | speeds + global limits + all server settings |
 | `session:portTest` | `port-test` for the Server Parameters dialog |
 | `dialog:pickFolder` | native folder picker → `{local, remote}` (mapped) |
-| `shell:openPath` / `shell:showItem` | open / reveal a daemon path locally |
+| `shell:openPath` / `shell:showItem` | open / reveal a daemon path locally → `OpenPathResult` |
+| `app:checkUpdate` | latest GitHub release newer than this build → `UpdateInfo`, else null |
+| `shell:openRelease` | open a release page (only this repo's `/releases/` URLs) |
 | `menu-action` (main→renderer) | native menu item clicked |
 | `open-add` (main→renderer) | OS opened a magnet/.torrent |
 
@@ -67,7 +69,31 @@ the same storage on Windows (e.g. `Z:\downloads`) and configures
 - `localToRemote` — a folder picked in the native dialog → the daemon path sent
   in `download-dir` / `torrent-set-location`.
 - `remoteToLocal` — a daemon path → the local path for `shell.openPath` /
-  `shell.showItemInFolder` (with `/`↔`\` fixup for Windows targets).
+  `shell.showItemInFolder` (with `/`↔`\` fixup for Windows targets). A mapping
+  matches whole path segments only (`/mnt/down` doesn't cover `/mnt/downloads`).
+
+Open/reveal never hands an unresolved path to the OS — Windows answers a raw
+`/mnt/…` with a meaningless shell error. `resolveLocal` returns `unmapped` (no
+mapping matched and the path doesn't exist here as-is — a daemon on this same
+machine needs no mapping) or `missing` (mapped, but the share isn't reachable);
+the renderer turns either into a toast with a **Path mappings…** button that
+opens the Connect dialog scrolled to the mappings, with a row pre-started for
+the torrent's download dir when none covers it.
+
+## Updates & drag-and-drop
+
+On startup (pref `checkUpdates`, default on) main asks the GitHub API for the
+latest **published** release (drafts/prereleases are ignored by
+`/releases/latest`) and compares versions numerically; a newer one shows a
+banner with Download (opens the release page) / Skip this version (remembered in
+`localStorage`) / dismiss. No auto-install: the builds are unsigned, so the user
+downloads the installer/DMG themselves. Disabled in demo mode.
+
+Files dropped anywhere on the window: `.torrent`s are read in the renderer
+(base64 metainfo) and `magnet:` links taken from `text/uri-list`/`text/plain`;
+each becomes an Add-dialog item in a queue (same queue as OS handoffs), shown
+one at a time. Main blocks `will-navigate`, so a drop that misses the handler
+can't navigate the window away to the file.
 
 Transmission RPC has no directory-listing method, so this mount + mapping is how
 a native folder browser works against the server's filesystem.

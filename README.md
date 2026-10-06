@@ -42,8 +42,10 @@
   scheduled alternate "turtle" limits, queueing, and the torrent script hooks —
   every editable Transmission session setting, adapting to the server's version.
 - **Open from anywhere** — handles `magnet:` links and `.torrent` files clicked
-  in your browser/Explorer; double-click a file to open it (or *Show in
-  Explorer*) on the mapped network drive.
+  in your browser/Explorer, or **dropped onto the window** (several at once are
+  queued); double-click a file to open it (or *Show in Explorer*) on the mapped
+  network drive — if no path mapping covers it, the error offers a one-click
+  jump to the mapping settings.
 - **Save where it lives on the server** — pick the destination through a native
   folder dialog on your mounted share; Transam maps it to the daemon's path.
 - **Import from Transmission Remote GUI** — the Connect dialog finds your old
@@ -51,7 +53,8 @@
   auth, HTTPS, and path mappings); pick one if you had several.
 - **Preferences** — theme (**dark by default, light available**), interface
   **scale** (for bigger text), **launch at login**, **minimize to the system
-  tray**, label rules, register file associations.
+  tray**, label rules, register file associations, **check for updates** on
+  startup (against GitHub releases; also Help → Check for Updates).
 - **Personal label** — set a label that's stamped on every torrent you add, so
   family members sharing one server can tell their torrents apart; your own
   label stands out **bold in a gold frame** in the list.

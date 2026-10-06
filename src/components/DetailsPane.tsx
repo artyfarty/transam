@@ -11,10 +11,14 @@ interface Props {
   torrent: Torrent | null;
   detail: TorrentDetail | null;
   onRefresh: () => void;
+  /** open/reveal a daemon path locally (App explains failures) */
+  onOpenPath: OpenPath;
   height: number;
 }
 
-export function DetailsPane({ torrent, detail, onRefresh, height }: Props) {
+type OpenPath = (how: 'open' | 'reveal', daemonPath: string, downloadDir: string) => void;
+
+export function DetailsPane({ torrent, detail, onRefresh, onOpenPath, height }: Props) {
   const [tab, setTab] = useState<Tab>('general');
 
   if (!torrent) {
@@ -39,7 +43,7 @@ export function DetailsPane({ torrent, detail, onRefresh, height }: Props) {
       <div className={`tab-content ${tab === 'files' ? 'files-pane' : ''}`}>
         {tab === 'general' && <General t={torrent} d={detail} onRefresh={onRefresh} />}
         {tab === 'files' &&
-          (detail ? <Files t={torrent} d={detail} onRefresh={onRefresh} /> : <div className="empty">Loading…</div>)}
+          (detail ? <Files t={torrent} d={detail} onRefresh={onRefresh} onOpenPath={onOpenPath} /> : <div className="empty">Loading…</div>)}
         {tab === 'peers' && <Peers d={detail} />}
         {tab === 'trackers' && <Trackers d={detail} />}
       </div>
@@ -179,7 +183,7 @@ function SeedingControl({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onR
   );
 }
 
-function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: () => void }) {
+function Files({ t, d, onRefresh, onOpenPath }: { t: Torrent; d: TorrentDetail; onRefresh: () => void; onOpenPath: OpenPath }) {
   if (d.files.length === 0) return <div className="empty">No files</div>;
   const setWanted = async (idxs: number[], wanted: boolean) => {
     await window.api.set([t.id], wanted ? { 'files-wanted': idxs } : { 'files-unwanted': idxs });
@@ -190,9 +194,10 @@ function Files({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onRefresh: (
     await window.api.set([t.id], { [key]: idxs });
     onRefresh();
   };
-  const fullPath = (name: string) => `${(d.downloadDir ?? '').replace(/\/+$/, '')}/${name}`;
-  const openFile = (name: string) => void window.api.openPath(fullPath(name));
-  const revealFile = (name: string) => void window.api.showItem(fullPath(name));
+  const dir = d.downloadDir ?? t.downloadDir;
+  const fullPath = (name: string) => `${dir.replace(/\/+$/, '')}/${name}`;
+  const openFile = (name: string) => onOpenPath('open', fullPath(name), dir);
+  const revealFile = (name: string) => onOpenPath('reveal', fullPath(name), dir);
   return (
     <FilesTable
       detail={d}

@@ -14,6 +14,8 @@ interface Props {
   onRunLabelRules: () => void;
   personalLabel: string;
   onPersonalLabel: (s: string) => void;
+  checkUpdates: boolean;
+  onCheckUpdates: (on: boolean) => void;
   onClose: () => void;
 }
 
@@ -27,6 +29,8 @@ export function PreferencesModal({
   onRunLabelRules,
   personalLabel,
   onPersonalLabel,
+  checkUpdates,
+  onCheckUpdates,
   onClose,
 }: Props) {
   const [busy, setBusy] = useState(false);
@@ -104,6 +108,10 @@ export function PreferencesModal({
               }}
             />
             <span>Minimize to the system tray</span>
+          </label>
+          <label className="cfg-check">
+            <input type="checkbox" checked={checkUpdates} onChange={(e) => onCheckUpdates(e.target.checked)} />
+            <span>Check for updates on startup (GitHub releases)</span>
           </label>
         </div>
 

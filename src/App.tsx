@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload, SpeedLimits } from '../shared/types';
+import type { ServerConfig, Torrent, TorrentDetail, OpenAddPayload, SpeedLimits, OpenPathResult, UpdateInfo } from '../shared/types';
 import { Toolbar } from './components/Toolbar';
 import { TorrentTable } from './components/TorrentTable';
 import { DetailsPane } from './components/DetailsPane';
@@ -21,6 +21,30 @@ import { setDateLocale, REVEAL_LABEL } from './format';
 import { loadJSON, saveJSON } from './persist';
 
 const POLL_MS = 1500;
+
+type Toast = string | { text: string; info?: boolean; action?: { label: string; run: () => void } };
+
+/** Human wording for a failed open/reveal of a torrent's files. */
+function pathErrorToast(r: Extract<OpenPathResult, { ok: false }>, fix: { label: string; run: () => void }): Toast {
+  if (r.reason === 'unmapped')
+    return { text: `${r.daemonPath} is on the server, and no path mapping says where it is on this computer.`, action: fix };
+  if (r.reason === 'missing')
+    return {
+      text: `${r.localPath} (mapped from ${r.daemonPath}) isn't reachable — is the share mounted, and is the mapping right?`,
+      action: fix,
+    };
+  return `Couldn't open ${r.localPath ?? r.daemonPath}: ${r.message}`;
+}
+
+/** A dropped File → base64 (what torrent-add's metainfo wants). */
+function fileBase64(f: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const rd = new FileReader();
+    rd.onload = () => resolve(String(rd.result).replace(/^data:[^,]*,/, ''));
+    rd.onerror = () => reject(rd.error);
+    rd.readAsDataURL(f);
+  });
+}
 
 export function App() {
   const [config, setConfig] = useState<ServerConfig | null | undefined>(undefined);
@@ -131,6 +155,8 @@ export function App() {
   const [limits, setLimits] = useState<SpeedLimits | null>(null);
   const [globalRatio, setGlobalRatio] = useState<{ enabled: boolean; limit: number }>({ enabled: false, limit: 0 });
   const [showConnect, setShowConnect] = useState(false);
+  // daemon dir to offer a path mapping for when Connection settings open from a path error
+  const [mapFor, setMapFor] = useState<string | undefined>();
   const [showAdd, setShowAdd] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showPrefs, setShowPrefs] = useState(false);
@@ -149,14 +175,90 @@ export function App() {
   // can tell their own torrents apart. Highlighted gold in the list (it's mine).
   const [personalLabel, setPersonalLabel] = useState<string>(() => loadJSON('personalLabel', ''));
   useEffect(() => saveJSON('personalLabel', personalLabel), [personalLabel]);
-  const [addPrefill, setAddPrefill] = useState<OpenAddPayload | null>(null);
+  // Torrents waiting for the Add dialog (OS handoff, drag-and-drop); shown one
+  // at a time — the dialog remounts per item (keyed by id).
+  const [addQueue, setAddQueue] = useState<{ id: number; p: OpenAddPayload }[]>([]);
+  const addSeq = useRef(0);
+  const queueAdd = useCallback((ps: OpenAddPayload[]) => {
+    if (!ps.length) return;
+    setAddQueue((q) => [...q, ...ps.map((p) => ({ id: ++addSeq.current, p }))]);
+    setShowAdd(true);
+  }, []);
+  const closeAdd = () => {
+    setAddQueue((q) => {
+      const rest = q.slice(1);
+      if (!rest.length) setShowAdd(false);
+      return rest;
+    });
+  };
 
   // OS opened a magnet link or .torrent file with us → open the Add dialog.
+  useEffect(() => window.api.onOpenAdd((p) => queueAdd([p])), [queueAdd]);
+
+  // Drag-and-drop .torrent files (or magnet links) anywhere onto the window.
+  const [dragging, setDragging] = useState(false);
   useEffect(() => {
-    return window.api.onOpenAdd((p) => {
-      setAddPrefill(p);
-      setShowAdd(true);
-    });
+    let depth = 0; // dragenter/leave fire per child element; count to know when we really left
+    const accepts = (e: DragEvent) =>
+      !!e.dataTransfer && [...e.dataTransfer.types].some((t) => t === 'Files' || t === 'text/uri-list' || t === 'text/plain');
+    const enter = (e: DragEvent) => {
+      if (!accepts(e)) return;
+      e.preventDefault();
+      if (depth++ === 0) setDragging(true);
+    };
+    const over = (e: DragEvent) => {
+      if (!accepts(e)) return;
+      e.preventDefault();
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    };
+    const leave = () => {
+      if (depth > 0 && --depth === 0) setDragging(false);
+    };
+    const drop = async (e: DragEvent) => {
+      e.preventDefault();
+      depth = 0;
+      setDragging(false);
+      const dt = e.dataTransfer;
+      if (!dt) return;
+      const files = [...dt.files].filter((f) => f.name.toLowerCase().endsWith('.torrent'));
+      if (files.length) {
+        queueAdd(await Promise.all(files.map(async (f) => ({ metainfo: await fileBase64(f), name: f.name }))));
+        return;
+      }
+      const text = (dt.getData('text/uri-list') || dt.getData('text/plain')).trim();
+      const magnets = text.split(/\s+/).filter((s) => s.startsWith('magnet:'));
+      if (magnets.length) queueAdd(magnets.map((url) => ({ url })));
+      else if (dt.files.length) setToast('Only .torrent files can be dropped here');
+    };
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', drop);
+    return () => {
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', drop);
+    };
+  }, [queueAdd]);
+
+  // Update check against GitHub releases (on startup, unless turned off).
+  const [checkUpdates, setCheckUpdates] = useState<boolean>(() => loadJSON('checkUpdates', true));
+  useEffect(() => saveJSON('checkUpdates', checkUpdates), [checkUpdates]);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
+  const runUpdateCheck = useCallback(async (manual: boolean) => {
+    try {
+      const u = await window.api.checkUpdate();
+      if (u && (manual || u.latest !== loadJSON<string>('skippedVersion', ''))) setUpdate(u);
+      else if (manual) setToast({ text: `Transam ${__APP_VERSION__} is the latest version`, info: true });
+    } catch (e) {
+      if (manual) setToast(`Update check failed: ${(e as Error).message}`);
+    }
+  }, []);
+  useEffect(() => {
+    if (checkUpdates) void runUpdateCheck(false);
+    // startup only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // pick up the OS regional locale for date formatting
@@ -271,10 +373,11 @@ export function App() {
 
   // ids with an in-flight action → row shows a shimmer until it settles
   const [busy, setBusy] = useState<Set<number>>(new Set());
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
   useEffect(() => {
     if (!toast) return;
-    const h = setTimeout(() => setToast(null), 4500);
+    // give an actionable toast time to be clicked
+    const h = setTimeout(() => setToast(null), typeof toast === 'object' && toast.action ? 10000 : 4500);
     return () => clearTimeout(h);
   }, [toast]);
 
@@ -322,6 +425,7 @@ export function App() {
     if (a === 'add') setShowAdd(true);
     else if (a === 'settings') setShowConnect(true);
     else if (a === 'about') setShowAbout(true);
+    else if (a === 'check-updates') void runUpdateCheck(true);
     else if (a === 'preferences') setShowPrefs(true);
     else if (a === 'server-params') setShowServer(true);
     else if (a === 'relocate') relocate();
@@ -352,13 +456,26 @@ export function App() {
     if (!ids.length) return;
     setLabelsEdit({ ids: [...ids], initial: (ctxTarget()?.labels ?? []).join(', ') });
   }
+  // Open/reveal a daemon path locally; explain a failure and offer the fix.
+  const openDaemonPath = useCallback(async (how: 'open' | 'reveal', daemonPath: string, downloadDir: string) => {
+    const r = await (how === 'open' ? window.api.openPath(daemonPath) : window.api.showItem(daemonPath));
+    if (r.ok) return;
+    const fix = {
+      label: 'Path mappings…',
+      run: () => {
+        setMapFor(downloadDir);
+        setShowConnect(true);
+      },
+    };
+    setToast(pathErrorToast(r, fix));
+  }, []);
   function openFolder() {
     const t = ctxTarget();
-    if (t) void window.api.openPath(t.downloadDir);
+    if (t) void openDaemonPath('open', t.downloadDir, t.downloadDir);
   }
   function revealItem() {
     const t = ctxTarget();
-    if (t) void window.api.showItem(`${t.downloadDir.replace(/\/+$/, '')}/${t.name}`);
+    if (t) void openDaemonPath('reveal', `${t.downloadDir.replace(/\/+$/, '')}/${t.name}`, t.downloadDir);
   }
 
   const menuItems: MenuItem[] = [
@@ -467,6 +584,23 @@ export function App() {
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
       />
       {config && !connected && <div className="banner">Disconnected — retrying…</div>}
+      {update && (
+        <div className="banner update">
+          Transam {update.latest} is available (you have {update.current}).
+          <button onClick={() => void window.api.openRelease(update.url)}>Download</button>
+          <button
+            onClick={() => {
+              saveJSON('skippedVersion', update.latest);
+              setUpdate(null);
+            }}
+          >
+            Skip this version
+          </button>
+          <button className="x" onClick={() => setUpdate(null)} title="Remind me next launch">
+            ✕
+          </button>
+        </div>
+      )}
       <div className="body">
         {sidebarOpen && (
           <>
@@ -495,6 +629,7 @@ export function App() {
             torrent={selectedTorrent}
             detail={selId === detail?.id ? detail : null}
             onRefresh={fetchDetail}
+            onOpenPath={openDaemonPath}
             height={detailsH}
           />
         </div>
@@ -522,6 +657,8 @@ export function App() {
           onRunLabelRules={runLabelRules}
           personalLabel={personalLabel}
           onPersonalLabel={setPersonalLabel}
+          checkUpdates={checkUpdates}
+          onCheckUpdates={setCheckUpdates}
           onClose={() => setShowPrefs(false)}
         />
       )}
@@ -539,28 +676,53 @@ export function App() {
           }}
         />
       )}
-      {toast && <div className="toast">{toast}</div>}
+      {toast &&
+        (typeof toast === 'string' ? (
+          <div className="toast">{toast}</div>
+        ) : (
+          <div className={`toast${toast.info ? ' info' : ''}`}>
+            {toast.text}
+            {toast.action && (
+              <button
+                onClick={() => {
+                  toast.action!.run();
+                  setToast(null);
+                }}
+              >
+                {toast.action.label}
+              </button>
+            )}
+          </div>
+        ))}
+      {dragging && <div className="drop-overlay">Drop .torrent files or magnet links to add</div>}
 
       {showConnect && (
         <ConnectDialog
           initial={config}
+          mapFor={mapFor}
           onSaved={(cfg) => {
             setShowConnect(false);
+            setMapFor(undefined);
             setConfig({ ...cfg }); // new ref → triggers reconnect effect
           }}
-          onCancel={config ? () => setShowConnect(false) : undefined}
+          onCancel={
+            config
+              ? () => {
+                  setShowConnect(false);
+                  setMapFor(undefined);
+                }
+              : undefined
+          }
         />
       )}
       {showAdd && (
         <AddDialog
-          prefill={addPrefill}
+          key={addQueue[0]?.id ?? 0}
+          prefill={addQueue[0]?.p ?? null}
           suggestions={dirSuggestions}
           defaultDir={recentDirs[0] ?? ''}
           suggestDir={(name) => suggestDir(name, torrents) ?? seriesHist[seriesKey(name)]}
-          onCancel={() => {
-            setShowAdd(false);
-            setAddPrefill(null);
-          }}
+          onCancel={closeAdd}
           onAdd={async (opts) => {
             const mine = personalLabel.trim();
             const r = await window.api.add({

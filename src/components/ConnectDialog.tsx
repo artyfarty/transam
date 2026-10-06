@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ServerConfig, PathMapping, ImportedProfile } from '../../shared/types';
 
 const DEFAULTS: ServerConfig = {
@@ -15,10 +15,39 @@ interface Props {
   initial: ServerConfig | null;
   onSaved: (cfg: ServerConfig) => void;
   onCancel?: () => void;
+  /**
+   * Opened from a "can't open this path" error: jump to the mappings and, if
+   * no mapping covers this daemon dir yet, start one for it.
+   */
+  mapFor?: string;
 }
 
-export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
-  const [cfg, setCfg] = useState<ServerConfig>({ ...DEFAULTS, ...(initial ?? {}) });
+/** Does a mapping's daemon side cover this daemon path (whole segments)? */
+const covers = (remote: string, p: string) => {
+  const r = remote.trim().replace(/\/+$/, '').toLowerCase();
+  const q = p.toLowerCase();
+  return !!r && (q === r || q.startsWith(r + '/'));
+};
+
+export function ConnectDialog({ initial, onSaved, onCancel, mapFor }: Props) {
+  const [cfg, setCfg] = useState<ServerConfig>(() => {
+    const c = { ...DEFAULTS, ...(initial ?? {}) };
+    const maps = c.pathMappings ?? [];
+    if (mapFor && !maps.some((m) => covers(m.remote, mapFor)))
+      c.pathMappings = [...maps, { local: '', remote: mapFor.replace(/\/+$/, '') }];
+    return c;
+  });
+  const mapsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!mapFor || !mapsRef.current) return;
+    mapsRef.current.scrollIntoView({ block: 'center' });
+    // focus the row for this path: a fresh one wants its local side typed in
+    const rows = mapsRef.current.querySelectorAll<HTMLInputElement>('.map-row input:first-child');
+    const i = (cfg.pathMappings ?? []).findIndex((m) => covers(m.remote, mapFor));
+    rows[i]?.focus();
+    // once, on open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
   const [importNote, setImportNote] = useState('');
@@ -122,8 +151,13 @@ export function ConnectDialog({ initial, onSaved, onCancel }: Props) {
           </label>
         </div>
 
-        <div className="field">
-          <label>Path mappings (local mount → daemon path)</label>
+        <div className={`field${mapFor ? ' map-focus' : ''}`} ref={mapsRef}>
+          <label>Path mappings (local folder → path on the server)</label>
+          {mapFor && (
+            <div className="map-hint">
+              Say where <code>{mapFor}</code> is reachable from this computer — e.g. a mapped drive or network share.
+            </div>
+          )}
           {mappings.map((m, i) => (
             <div className="map-row" key={i}>
               <input

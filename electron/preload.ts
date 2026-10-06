@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import type { IpcRendererEvent } from 'electron';
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs, OpenPathResult, UpdateInfo } from '../shared/types';
 
 // The typed surface exposed to the renderer as window.api.
 const api = {
@@ -33,8 +33,10 @@ const api = {
   pickTorrent: (): Promise<{ metainfo: string; name: string } | null> => ipcRenderer.invoke('dialog:pickTorrent'),
   parseTorrent: (input: { url?: string; metainfo?: string }): Promise<TorrentPreview | { error: string }> =>
     ipcRenderer.invoke('add:parse', input),
-  openPath: (daemonPath: string): Promise<string> => ipcRenderer.invoke('shell:openPath', daemonPath),
-  showItem: (daemonPath: string): Promise<void> => ipcRenderer.invoke('shell:showItem', daemonPath),
+  openPath: (daemonPath: string): Promise<OpenPathResult> => ipcRenderer.invoke('shell:openPath', daemonPath),
+  showItem: (daemonPath: string): Promise<OpenPathResult> => ipcRenderer.invoke('shell:showItem', daemonPath),
+  checkUpdate: (): Promise<UpdateInfo | null> => ipcRenderer.invoke('app:checkUpdate'),
+  openRelease: (url: string): Promise<void> => ipcRenderer.invoke('shell:openRelease', url),
   associate: (): Promise<string> => ipcRenderer.invoke('app:associate'),
   getLocale: (): Promise<string> => ipcRenderer.invoke('app:getLocale'),
   setZoom: (factor: number): Promise<void> => ipcRenderer.invoke('app:setZoom', factor),

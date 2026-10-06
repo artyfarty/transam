@@ -123,6 +123,60 @@ body {
   box-shadow: 0 6px 24px #0009;
   z-index: 30;
   max-width: 70%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.toast.info {
+  border-color: var(--accent);
+}
+.toast button,
+.banner.update button {
+  flex: 0 0 auto;
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 4px;
+  padding: 2px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+.toast button:hover,
+.banner.update button:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* update-available banner */
+.banner.update {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+}
+.banner.update button.x {
+  border: none;
+  color: var(--text-dim);
+  padding: 0 4px;
+}
+
+/* drag-and-drop .torrent target */
+.drop-overlay {
+  position: fixed;
+  inset: 8px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  color: var(--text);
+  font-size: 16px;
+  pointer-events: none;
 }
 
 /* ---- toolbar ---- */
@@ -1211,6 +1265,20 @@ table.files select {
 }
 .map-row .del:hover {
   color: var(--error);
+}
+.map-hint {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 2px 0 6px;
+}
+.map-hint code {
+  font: var(--mono);
+  color: var(--text);
+}
+.map-focus {
+  outline: 1px solid var(--accent);
+  outline-offset: 6px;
+  border-radius: 4px;
 }
 .add-map {
   background: transparent;

@@ -1,11 +1,11 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, Menu, Tray, nativeImage } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Menu, Tray, nativeImage, net } from 'electron';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { TransmissionClient } from './transmission';
 import { TORRENT_FIELDS, DETAIL_FIELDS } from '../shared/types';
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, OpenPathResult, UpdateInfo } from '../shared/types';
 import { parseTorrentFile } from './bencode';
 import { importProfiles } from './importTransgui';
 import { DEMO, demoConfig, demoHandle } from './demo';
@@ -98,10 +98,14 @@ function localToRemote(cfg: ServerConfig, local: string): string {
   return local;
 }
 
-function remoteToLocal(cfg: ServerConfig, remote: string): string {
+/** A daemon path → the local path through the first matching mapping, or null. */
+function remoteToLocal(cfg: ServerConfig, remote: string): string | null {
   for (const m of cfg.pathMappings ?? []) {
     const r = m.remote.replace(/\/+$/, '');
-    if (remote.toLowerCase().startsWith(r.toLowerCase())) {
+    const head = remote.slice(0, r.length);
+    const after = remote.charAt(r.length);
+    // match whole path segments only: /mnt/down must not cover /mnt/downloads
+    if (head.toLowerCase() === r.toLowerCase() && (after === '' || after === '/')) {
       const rest = remote.slice(r.length).replace(/^\/+/, '');
       const win = /^[A-Za-z]:/.test(m.local) || m.local.includes('\\');
       const sep = win ? '\\' : '/';
@@ -109,7 +113,52 @@ function remoteToLocal(cfg: ServerConfig, remote: string): string {
       return m.local.replace(/[\\/]+$/, '') + sep + tail;
     }
   }
-  return remote;
+  return null;
+}
+
+/**
+ * Resolve a daemon path to an existing local one before handing it to the OS
+ * (which otherwise answers an unmapped "/mnt/…" with a cryptic shell error).
+ * No mapping is fine only when the daemon path exists here as-is (daemon on
+ * this machine).
+ */
+function resolveLocal(daemonPath: string): { local: string } | Extract<OpenPathResult, { ok: false }> {
+  const cfg = loadConfig();
+  const mapped = cfg ? remoteToLocal(cfg, daemonPath) : null;
+  if (mapped == null) {
+    if (path.isAbsolute(daemonPath) && fs.existsSync(daemonPath)) return { local: daemonPath };
+    return { ok: false, reason: 'unmapped', daemonPath };
+  }
+  if (!fs.existsSync(mapped)) return { ok: false, reason: 'missing', daemonPath, localPath: mapped };
+  return { local: mapped };
+}
+
+// --- update check (GitHub releases) -----------------------------------------
+const REPO = 'artyfarty/transam';
+const RELEASES_URL = `https://api.github.com/repos/${REPO}/releases/latest`;
+
+/** "v1.2.3" / "1.2.3" → [1,2,3]; compares numerically, missing parts = 0. */
+function newerThan(a: string, b: string): boolean {
+  const pa = a.replace(/^v/, '').split('.').map((x) => parseInt(x, 10) || 0);
+  const pb = b.replace(/^v/, '').split('.').map((x) => parseInt(x, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (d) return d > 0;
+  }
+  return false;
+}
+
+async function checkUpdate(): Promise<UpdateInfo | null> {
+  if (DEMO) return null;
+  const res = await net.fetch(RELEASES_URL, {
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': `Transam/${app.getVersion()}` },
+  });
+  if (!res.ok) throw new Error(`GitHub answered ${res.status}`);
+  const rel = (await res.json()) as { tag_name: string; html_url: string };
+  const current = app.getVersion();
+  return newerThan(rel.tag_name, current)
+    ? { current, latest: rel.tag_name.replace(/^v/, ''), url: rel.html_url }
+    : null;
 }
 
 const pexec = promisify(execFile);
@@ -276,16 +325,25 @@ function registerIpc(): void {
   );
 
   // Open a file/folder that lives on the daemon, via its mapped local path.
-  ipcMain.handle('shell:openPath', async (_e, daemonPath: string): Promise<string> => {
-    const cfg = loadConfig();
-    const local = cfg ? remoteToLocal(cfg, daemonPath) : daemonPath;
-    return shell.openPath(local); // '' on success, else an error message
+  ipcMain.handle('shell:openPath', async (_e, daemonPath: string): Promise<OpenPathResult> => {
+    const r = resolveLocal(daemonPath);
+    if (!('local' in r)) return r;
+    const err = await shell.openPath(r.local); // '' on success, else an error message
+    return err ? { ok: false, reason: 'failed', daemonPath, localPath: r.local, message: err } : { ok: true };
   });
 
   // Reveal a file/folder in the OS file manager (selects it).
-  ipcMain.handle('shell:showItem', async (_e, daemonPath: string): Promise<void> => {
-    const cfg = loadConfig();
-    shell.showItemInFolder(cfg ? remoteToLocal(cfg, daemonPath) : daemonPath);
+  ipcMain.handle('shell:showItem', async (_e, daemonPath: string): Promise<OpenPathResult> => {
+    const r = resolveLocal(daemonPath);
+    if (!('local' in r)) return r;
+    shell.showItemInFolder(r.local);
+    return { ok: true };
+  });
+
+  ipcMain.handle('app:checkUpdate', async (): Promise<UpdateInfo | null> => checkUpdate());
+  // only ever our own GitHub release pages
+  ipcMain.handle('shell:openRelease', (_e, url: string) => {
+    if (url.startsWith(`https://github.com/${REPO}/releases/`)) void shell.openExternal(url);
   });
 
   // OS regional locale (for date/number formatting in the renderer).
@@ -502,6 +560,10 @@ function createWindow(): void {
   } else {
     win.loadFile(path.join(__dirname, '../../dist/index.html'));
   }
+
+  // A file dropped outside the renderer's drop handler would navigate the
+  // window to it; the UI is a single page, so never navigate.
+  win.webContents.on('will-navigate', (e) => e.preventDefault());
 
   win.webContents.on('did-finish-load', () => {
     const queued = pendingOpen;

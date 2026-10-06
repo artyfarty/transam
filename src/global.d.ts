@@ -1,4 +1,4 @@
-import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs } from '../shared/types';
+import type { ServerConfig, RpcResult, OpenAddPayload, TorrentPreview, ImportResult, AppPrefs, OpenPathResult, UpdateInfo } from '../shared/types';
 
 declare global {
   interface Window {
@@ -25,8 +25,10 @@ declare global {
       pickFolder(): Promise<{ local: string; remote: string } | null>;
       pickTorrent(): Promise<{ metainfo: string; name: string } | null>;
       parseTorrent(input: { url?: string; metainfo?: string }): Promise<TorrentPreview | { error: string }>;
-      openPath(daemonPath: string): Promise<string>;
-      showItem(daemonPath: string): Promise<void>;
+      openPath(daemonPath: string): Promise<OpenPathResult>;
+      showItem(daemonPath: string): Promise<OpenPathResult>;
+      checkUpdate(): Promise<UpdateInfo | null>;
+      openRelease(url: string): Promise<void>;
       associate(): Promise<string>;
       getLocale(): Promise<string>;
       setZoom(factor: number): Promise<void>;

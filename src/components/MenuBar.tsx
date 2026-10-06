@@ -38,7 +38,13 @@ const MENUS: Menu[] = [
       { label: 'Remove + Delete Data', action: 'remove-data' },
     ],
   },
-  { label: 'Help', items: [{ label: 'About Transam', action: 'about' }] },
+  {
+    label: 'Help',
+    items: [
+      { label: 'Check for Updates…', action: 'check-updates' },
+      { label: 'About Transam', action: 'about' },
+    ],
+  },
 ];
 
 export function MenuBar({ onAction }: { onAction: (action: string) => void }) {
