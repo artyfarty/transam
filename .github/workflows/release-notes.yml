@@ -1,0 +1,27 @@
+# Keep the notes of already-published releases in sync with CHANGELOG.md, so a
+# release's text can be written or fixed after the fact with a plain commit.
+name: Release notes
+
+on:
+  push:
+    branches: [master]
+    paths: [CHANGELOG.md]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for v in $(grep -oP '^## \K[0-9][^ ]*' CHANGELOG.md); do
+            gh release view "v$v" >/dev/null 2>&1 || continue   # not released (yet)
+            scripts/changelog-section.sh "$v" > notes.md
+            gh release edit "v$v" --notes-file notes.md
+            echo "synced v$v"
+          done

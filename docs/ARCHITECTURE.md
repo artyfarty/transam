@@ -42,6 +42,7 @@ view that issues intents over IPC.
 | `torrents:set` | generic `torrent-set` (file priorities, seeding limits…) |
 | `torrents:setLocation` | `torrent-set-location` (move) |
 | `torrents:add` | `torrent-add` (url/magnet or base64 metainfo) |
+| `torrents:rename` | `torrent-rename-path` (torrent or file) |
 | `session:stats` / `session:get` / `session:set` | speeds + global limits + all server settings |
 | `session:portTest` | `port-test` for the Server Parameters dialog |
 | `dialog:pickFolder` | native folder picker → `{local, remote}` (mapped) |
@@ -163,8 +164,23 @@ which builds the NSIS setup on `windows-latest` and the DMGs on `macos-latest`,
 then publishes them as a GitHub release using the run's own `GITHUB_TOKEN`
 (no PAT; only that job gets `contents: write`). electron-builder runs with
 `--publish never` — on a tag it would otherwise try to publish by itself and
-fail without a token (bump `version` in package.json first —
-it names the artifacts). A manual dispatch only leaves workflow artifacts.
+fail without a token. Bump `version` in package.json before tagging — it names
+the artifacts. A manual dispatch only leaves workflow artifacts.
+
+Release notes come from **`CHANGELOG.md`**: the release job publishes the
+`## <version>` section (`scripts/changelog-section.sh`; a tag without a section
+fails the release rather than shipping empty notes), and
+`.github/workflows/release-notes.yml` re-syncs every already-published
+release's notes whenever `CHANGELOG.md` changes on master. Write entries for
+users, one line per bullet (GitHub renders hard wraps in release notes).
+
+**Renaming** uses `torrent-rename-path` (`torrents:rename`: `path` = the current
+name of the torrent or a file's path inside it, `name` = the new last
+component). The Add dialog's *Save as* renames right after `torrent-add` for a
+.torrent (the names are known); for a magnet the daemon has no names until the
+metadata arrives, so the wanted name waits in `localStorage.pendingRenames`
+keyed by info-hash and the poll applies it once `metadataPercentComplete`
+reaches 1 (entries for torrents gone for a day are dropped).
 
 Windows labels the app by the exe's **FileDescription** (Start-menu search,
 Task Manager, "Open with"), not by `productName`. electron-builder fills it

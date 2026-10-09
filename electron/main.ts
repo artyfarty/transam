@@ -324,6 +324,13 @@ function registerIpc(): void {
     },
   );
 
+  // Rename a torrent's top-level name (path = its current name) or one of its
+  // files/folders (path = the file's path inside the torrent). `name` is the
+  // new last component only.
+  ipcMain.handle('torrents:rename', async (_e, id: number, oldPath: string, name: string): Promise<RpcResult> =>
+    ensureClient().call('torrent-rename-path', { ids: [id], path: oldPath, name }),
+  );
+
   // Open a file/folder that lives on the daemon, via its mapped local path.
   ipcMain.handle('shell:openPath', async (_e, daemonPath: string): Promise<OpenPathResult> => {
     const r = resolveLocal(daemonPath);

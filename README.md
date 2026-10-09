@@ -31,7 +31,9 @@
 - **Sidebar** — collapsible filters by category (Downloading, Seeding, Paused,
   Error, …) and by label; plus a search box.
 - **Add** — paste a magnet / .torrent link or pick a file, then see a **preview**
-  (name, size, file list) before adding and choose where to save. Picks the
+  (name, size, file list) before adding, choose where to save, and **rename**
+  it (the file or top folder — magnets are renamed once their metadata arrives).
+  Torrents and individual files can be renamed later too (right-click / F2). Picks the
   destination smartly: recent folders, and a **series guesser** that drops new
   episodes next to the rest of the show (newest season wins).
 - **Details** — overview with a piece-availability map and per-torrent seeding

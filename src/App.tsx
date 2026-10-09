@@ -10,6 +10,7 @@ import { AboutModal } from './components/AboutModal';
 import { PreferencesModal } from './components/PreferencesModal';
 import { ServerParamsModal } from './components/ServerParamsModal';
 import { LabelsDialog } from './components/LabelsDialog';
+import { RenameDialog } from './components/RenameDialog';
 import { Sidebar } from './components/Sidebar';
 import { Splitter } from './components/Splitter';
 import { ContextMenu, type MenuItem } from './components/ContextMenu';
@@ -437,6 +438,49 @@ export function App() {
   useEffect(() => window.api.onMenuAction((a) => onMenuRef.current(a)), []);
 
   const [labelsEdit, setLabelsEdit] = useState<{ ids: number[]; initial: string } | null>(null);
+  const [renaming, setRenaming] = useState<Torrent | null>(null);
+  function renameTorrent() {
+    const t = ids.length === 1 ? ctxTarget() : undefined;
+    if (t && t.metadataPercentComplete >= 1) setRenaming(t);
+  }
+
+  // Renames chosen in the Add dialog for magnets: Transmission can only rename
+  // once the metadata (real names) has arrived, so they wait here, keyed by
+  // info-hash and persisted across restarts, and are applied from the poll.
+  const [pendingRenames, setPendingRenames] = useState<Record<string, { name: string; at: number }>>(() =>
+    loadJSON('pendingRenames', {}),
+  );
+  useEffect(() => saveJSON('pendingRenames', pendingRenames), [pendingRenames]);
+  const renamingNow = useRef(new Set<string>());
+  useEffect(() => {
+    const hashes = Object.keys(pendingRenames);
+    if (!hashes.length || !connected) return;
+    const stale = Date.now() - 24 * 3600 * 1000;
+    for (const h of hashes) {
+      const t = torrents.find((x) => x.hashString === h);
+      const done = (msg?: string) => {
+        renamingNow.current.delete(h);
+        setPendingRenames(({ [h]: _, ...rest }) => rest);
+        if (msg) setToast(msg);
+      };
+      if (!t) {
+        if (pendingRenames[h].at < stale) done(); // removed meanwhile
+        continue;
+      }
+      if (t.metadataPercentComplete < 1 || renamingNow.current.has(h)) continue;
+      renamingNow.current.add(h);
+      const want = pendingRenames[h].name;
+      if (t.name === want) {
+        done();
+        continue;
+      }
+      void window.api.rename(t.id, t.name, want).then((r) => {
+        done(r.ok ? undefined : `Couldn't rename “${t.name}”: ${r.result}`);
+        if (r.ok) poll();
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [torrents, connected]);
 
   async function runLabelRules() {
     let n = 0;
@@ -485,6 +529,7 @@ export function App() {
     { separator: true },
     { label: 'Open folder', onClick: openFolder },
     { label: REVEAL_LABEL, onClick: revealItem },
+    { label: 'Rename…', onClick: renameTorrent, disabled: ids.length !== 1 || !ctxTarget() || ctxTarget()!.metadataPercentComplete < 1 },
     { label: 'Edit labels…', onClick: editLabels },
     { label: 'Verify', onClick: () => act('verify') },
     { label: 'Reannounce', onClick: () => act('reannounce') },
@@ -506,6 +551,9 @@ export function App() {
         act(anyActive ? 'stop' : 'start');
       } else if (e.key === 'Delete') {
         act('remove');
+      } else if (e.key === 'F2') {
+        e.preventDefault();
+        renameTorrent();
       } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         if (!filtered.length) return;
         e.preventDefault();
@@ -676,6 +724,21 @@ export function App() {
           }}
         />
       )}
+      {renaming && (
+        <RenameDialog
+          title="Rename torrent"
+          initial={renaming.name}
+          // a single-file torrent's name is a filename: keep its extension selected-out
+          keepExtension={detail?.id === renaming.id && detail.files.length === 1}
+          onCancel={() => setRenaming(null)}
+          onApply={async (name) => {
+            const r = await window.api.rename(renaming.id, renaming.name, name);
+            if (!r.ok) return r.result;
+            setRenaming(null);
+            poll();
+          }}
+        />
+      )}
       {toast &&
         (typeof toast === 'string' ? (
           <div className="toast">{toast}</div>
@@ -734,6 +797,16 @@ export function App() {
             });
             if (!r.ok) throw new Error(r.result);
             recordDir(opts.downloadDir);
+            if (opts.name) {
+              const args = r.arguments as Record<string, { id: number; name: string; hashString: string } | undefined>;
+              const added = args?.['torrent-added'];
+              if (!added) setToast('That torrent is already on the server — it was not renamed');
+              else if (opts.metainfo) {
+                // the .torrent carries the real names, so rename right away
+                const rr = await window.api.rename(added.id, added.name, opts.name);
+                if (!rr.ok) setToast(`Added, but couldn't rename it: ${rr.result}`);
+              } else setPendingRenames((p) => ({ ...p, [added.hashString]: { name: opts.name!, at: Date.now() } }));
+            }
             poll();
           }}
         />

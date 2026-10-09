@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { OpenAddPayload, TorrentPreview } from '../../shared/types';
 import { humanSize } from '../format';
+import { badName, selectStem } from './RenameDialog';
 
 interface Props {
   prefill?: OpenAddPayload | null;
   suggestions?: string[];
   defaultDir?: string;
   suggestDir?: (name: string) => string | undefined;
-  onAdd: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused: boolean }) => Promise<void>;
+  /** `name` is set only when the user renamed it (the daemon renames right after adding) */
+  onAdd: (opts: { url?: string; metainfo?: string; downloadDir?: string; paused: boolean; name?: string }) => Promise<void>;
   onCancel: () => void;
 }
 
@@ -22,6 +24,8 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
   const [dir, setDir] = useState(defaultDir);
   const [dirTouched, setDirTouched] = useState(false);
   const [paused, setPaused] = useState(false);
+  // what the torrent (single file) or its top folder will be called on disk
+  const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
   async function parse(input: { url?: string; metainfo?: string }) {
@@ -35,6 +39,7 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
       return;
     }
     setPreview(r);
+    setName(r.name);
     setStep('preview');
   }
 
@@ -46,10 +51,11 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
   }, []);
 
   // suggest a destination from the parsed name until the user edits it
+  // (a renamed "Show S01E02" can match the series better than the release name)
   useEffect(() => {
     if (!preview || dirTouched) return;
-    setDir(suggestDir?.(preview.name) ?? defaultDir);
-  }, [preview, dirTouched, suggestDir, defaultDir]);
+    setDir(suggestDir?.(name.trim() || preview.name) ?? defaultDir);
+  }, [preview, name, dirTouched, suggestDir, defaultDir]);
 
   async function pickFile() {
     const r = await window.api.pickTorrent();
@@ -58,10 +64,13 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
 
   async function submit() {
     if (!preview) return;
+    const n = name.trim();
+    const renamed = n !== preview.name;
+    if (renamed && badName(n)) return setErr(badName(n));
     setBusy(true);
     setErr('');
     try {
-      await onAdd({ ...preview.source, downloadDir: dir.trim() || undefined, paused });
+      await onAdd({ ...preview.source, downloadDir: dir.trim() || undefined, paused, name: renamed ? n : undefined });
     } catch (e) {
       setErr((e as Error).message);
       setBusy(false);
@@ -69,6 +78,8 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
     }
     onCancel();
   }
+
+  const singleFile = preview?.kind === 'metainfo' && preview.files?.length === 1;
 
   return (
     <div className="modal-back">
@@ -121,6 +132,18 @@ export function AddDialog({ prefill, suggestions = [], defaultDir = '', suggestD
                       {preview.trackers?.length ? <span>{preview.trackers.length} tracker(s)</span> : null}
                     </>
                   )}
+                </div>
+
+                <div className="field">
+                  <label>
+                    {singleFile ? 'Save file as' : preview.kind === 'magnet' ? 'Save as (applied once the metadata arrives)' : 'Save folder as'}
+                  </label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onFocus={(e) => singleFile && selectStem(e.currentTarget)}
+                    spellCheck={false}
+                  />
                 </div>
 
                 {preview.files && preview.files.length > 1 && (

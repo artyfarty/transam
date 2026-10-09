@@ -94,9 +94,11 @@ interface Props {
   onSetPriority: (idxs: number[], pr: number) => void;
   onOpen: (name: string) => void;
   onReveal: (name: string) => void;
+  /** rename one file (its path inside the torrent) */
+  onRename: (name: string) => void;
 }
 
-export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onReveal }: Props) {
+export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onReveal, onRename }: Props) {
   const parentRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLDivElement>(null);
   const anchor = useRef<number | null>(null);
@@ -160,6 +162,7 @@ export function FilesTable({ detail, onSetWanted, onSetPriority, onOpen, onRevea
     ? [
         { label: 'Open', onClick: () => onOpen(menu.row.f.name) },
         { label: REVEAL_LABEL, onClick: () => onReveal(menu.row.f.name) },
+        { label: 'Rename…', onClick: () => onRename(menu.row.f.name) },
         { separator: true },
         { label: 'Priority: High', onClick: () => onSetPriority(targetIdx(menu.row.i), 1) },
         { label: 'Priority: Normal', onClick: () => onSetPriority(targetIdx(menu.row.i), 0) },

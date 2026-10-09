@@ -52,10 +52,14 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: out
           merge-multiple: true
       - env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" out/* --repo "$GITHUB_REPOSITORY" --title "Transam ${GITHUB_REF_NAME#v}" --generate-notes
+        # notes = this version's CHANGELOG.md section (fails the release if missing)
+        run: |
+          scripts/changelog-section.sh "$GITHUB_REF_NAME" > notes.md
+          gh release create "$GITHUB_REF_NAME" out/* --title "Transam ${GITHUB_REF_NAME#v}" --notes-file notes.md

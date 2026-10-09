@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { RenameDialog } from './RenameDialog';
 import type { Torrent, TorrentDetail } from '../../shared/types';
 import { humanSize, speed, percent, ratio, eta, statusText, dateTimeLong } from '../format';
 import { PieceBar } from './PieceBar';
@@ -184,6 +185,7 @@ function SeedingControl({ t, d, onRefresh }: { t: Torrent; d: TorrentDetail; onR
 }
 
 function Files({ t, d, onRefresh, onOpenPath }: { t: Torrent; d: TorrentDetail; onRefresh: () => void; onOpenPath: OpenPath }) {
+  const [renaming, setRenaming] = useState<string | null>(null);
   if (d.files.length === 0) return <div className="empty">No files</div>;
   const setWanted = async (idxs: number[], wanted: boolean) => {
     await window.api.set([t.id], wanted ? { 'files-wanted': idxs } : { 'files-unwanted': idxs });
@@ -199,13 +201,31 @@ function Files({ t, d, onRefresh, onOpenPath }: { t: Torrent; d: TorrentDetail; 
   const openFile = (name: string) => onOpenPath('open', fullPath(name), dir);
   const revealFile = (name: string) => onOpenPath('reveal', fullPath(name), dir);
   return (
-    <FilesTable
-      detail={d}
-      onSetWanted={setWanted}
-      onSetPriority={setPriority}
-      onOpen={openFile}
-      onReveal={revealFile}
-    />
+    <>
+      <FilesTable
+        detail={d}
+        onSetWanted={setWanted}
+        onSetPriority={setPriority}
+        onOpen={openFile}
+        onReveal={revealFile}
+        onRename={setRenaming}
+      />
+      {renaming && (
+        <RenameDialog
+          title="Rename file"
+          initial={renaming.slice(renaming.lastIndexOf('/') + 1)}
+          keepExtension
+          onCancel={() => setRenaming(null)}
+          onApply={async (name) => {
+            // path = the file's full path inside the torrent; name = new last component
+            const r = await window.api.rename(t.id, renaming, name);
+            if (!r.ok) return r.result;
+            setRenaming(null);
+            onRefresh();
+          }}
+        />
+      )}
+    </>
   );
 }
 

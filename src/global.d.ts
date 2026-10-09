@@ -19,6 +19,7 @@ declare global {
       sessionSet(args: Record<string, unknown>): Promise<RpcResult>;
       detail(id: number): Promise<RpcResult>;
       set(ids: number[], args: Record<string, unknown>): Promise<RpcResult>;
+      rename(id: number, oldPath: string, name: string): Promise<RpcResult>;
       setLocation(ids: number[], location: string, move: boolean): Promise<RpcResult>;
       action(action: string, ids: number[]): Promise<RpcResult>;
       add(opts: { url?: string; metainfo?: string; downloadDir?: string; paused?: boolean; labels?: string[] }): Promise<RpcResult>;
